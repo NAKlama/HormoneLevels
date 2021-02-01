@@ -20,8 +20,10 @@ from datetime import timedelta
 # from drugs import Estradiol
 
 
-class EstradiolValerate(drug.Drug):
+class EstradiolCypionate(drug.Drug):
     def __init__(self):
-        super().__init__("Estradiol valerate", timedelta(days=4, hours=12))
-        self.set_flood_in([1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-                           7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, .5, .5])
+        super().__init__("Estradiol cypionate", timedelta(days=9))
+        self.set_flood_in([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+                           8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7.5, 7.5, 7, 7,
+                           7, 7, 7, 7, 6.5, 6.5, 6, 6, 6, 6, 6, 6, 5.5, 5.5, 5.5, 5, 5, 5, 4.5, 4.5, 4.5, 4, 4, 4,
+                           3.5, 3.5, 3.5, 3, 3, 3, 2.5, 2.5, 2.5, 2, 2, 2, 1.5, 1.5, 1, 1, .5, .5])
