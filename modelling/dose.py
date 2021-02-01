@@ -1,0 +1,46 @@
+from typing import List, Iterable, Dict, Type
+
+from drugs.drug import Drug
+from datetime import datetime, timedelta
+from funcy import map, count, with_prev
+
+
+class Dose:
+    drug:   Drug
+    amount: float
+    time:   datetime
+    hour_dose: bool
+    new_dose: bool
+
+    def __init__(self, drug: Drug, amount: float, time: datetime, is_subdose: bool = False):
+        self.drug = drug
+        self.amount = amount
+        self.time = datetime(time.year, time.month, time.day, time.hour)
+        self.hour_dose = is_subdose
+
+    def get_subdoses(self) -> List["Dose"]:
+        if self.drug.flood_in is None or self.hour_dose is True:
+            return [Dose(self.drug, self.amount, self.time, True)]
+        else:
+            out = []
+            flood_in_lenght = len(self.drug.flood_in)
+            for t, flood_in in enumerate(self.drug.flood_in):
+                dose = self.amount * flood_in
+                out.append(Dose(self.drug, dose, self.time + timedelta(hours=t), False))
+            return out
+
+    def get_decay_curve(self) -> Iterable[float]:
+        def calc_decay(t: int) -> float:
+            hl_hours = self.drug.half_life.total_seconds() / 3600.0
+            factor = 2 ** (float(t) / hl_hours)
+            return self.amount * factor
+        return map(calc_decay, count())
+
+    # def get_metabolites(self) -> Dict[Type[Drug], Iterable[float]]:
+    #     out = {}
+    #     metabolites = {}
+    #     for drug, factor in self.drug.metabolites:
+    #         out[drug] = map(lambda now, prev: (prev - now) * factor,
+    #                         with_prev(self.get_decay_curve(), fill=0.0))
+    #     return out
+
