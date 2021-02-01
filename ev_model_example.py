@@ -21,6 +21,10 @@ from graphing.plot import plot_drugs
 from datetime import date, datetime, timedelta, time
 
 ev = EstradiolValerate()
+
+# Adjust the dates to be a few days in the past, but all after the BodyModel start date
+# for a small demonstration
+
 model = BodyModel(date(2020, 12, 12))
 
 model.add_dose(ev, 2.5, datetime(2020, 12, 12, 9))
