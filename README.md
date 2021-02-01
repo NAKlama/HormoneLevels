@@ -20,7 +20,8 @@ transfeminine HRT. It can graph the amount of estradiol valerate inside the body
 
 I'd love for some transmasculine folk to get in touch with me, and provide me with
 the names and half-lifes of commonly used testosterone esters, so I can add them to
-the project.
+the project. You can also add them as an issue as an easy way to ask for certain
+hormone esters to be added.
 
 Of course, feel free to create the files for that yourself, and make a pull-request.
 I'd be happy to collaborate with someone implementing some cool additional features.
