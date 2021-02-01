@@ -99,8 +99,8 @@ class BodyModel:
 
         drugs = set(levels.keys())
         for d in drugs:
-            level_matcher = map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])), levels)
-            estimates = list(map(lambda x: (x[1] / x[0]), level_matcher))
+            level_matcher = map(lambda x: (self.get_drug_at_timepoint(d, x[0]), x[1]), levels)
+            estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
             average_est = sum(map(lambda x: x / len(estimates)), estimates)
             std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
             self.blood_level_factors[d] = (average_est, std_dev)
