@@ -16,4 +16,5 @@
 
 # from .estradiol import Estradiol
 from .estradiol_valerate import EstradiolValerate
+from .estradiol_cypionate import EstradiolCypionate
 from .drug import Drug

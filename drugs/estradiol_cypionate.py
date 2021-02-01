@@ -17,12 +17,12 @@
 
 import drugs.drug as drug
 from datetime import timedelta
-# from drugs import Estradiol
 
 
 class EstradiolCypionate(drug.Drug):
     def __init__(self):
-        super().__init__("Estradiol cypionate", timedelta(days=9))
+        # super().__init__("Estradiol cypionate", timedelta(days=9)) # Aqueous solution
+        super().__init__("Estradiol cypionate", timedelta(days=12, hours=12))  # In oil
         self.set_flood_in([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
                            8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7.5, 7.5, 7, 7,
                            7, 7, 7, 7, 6.5, 6.5, 6, 6, 6, 6, 6, 6, 5.5, 5.5, 5.5, 5, 5, 5, 4.5, 4.5, 4.5, 4, 4, 4,
