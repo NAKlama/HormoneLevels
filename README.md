@@ -1,10 +1,10 @@
 # HormoneLevels
-Compute and graph hormone levels for transgernder HRT
+Compute and graph hormone levels for transgender HRT
 
 ## Current state of development
 
 Since I'm developing this softwares features as I need them, it is currently only for
-transfeminine HRT. It can graphe the amount of estradiol valerate inside the body.
+transfeminine HRT. It can graph the amount of estradiol valerate inside the body.
 
 ## Planned features
 
