@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import drugs.drug as drug
 from datetime import timedelta
 
 
-estradiol = drug.Drug("Estradiol", timedelta(minutes=30, hours=1))
+class EstradiolValerate(drug.Drug):
+    def __init__(self):
+        super().__init__("Estradiol valerate", timedelta(hours=1, minutes=30))
