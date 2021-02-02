@@ -36,3 +36,13 @@ hormone esters to be added.
 
 Of course, feel free to create the files for that yourself, and make a pull-request.
 I'd be happy to collaborate with someone implementing some cool additional features.
+
+## Disclaimer
+
+I am not a medical professional. The values estimated from this software should not
+be used to make medical decisions, without verification by actual blood tests.
+I did however study chemistry, have a good knowledge and experience in pharmakinetics,
+and software modelling.
+This software is intended to give you a better feeling of where your hormone levels
+probably are, and is not intended to replace blood tests. In fact, it relies on blood
+tests to improve its estimations.
