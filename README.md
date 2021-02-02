@@ -37,6 +37,10 @@ hormone esters to be added.
 Of course, feel free to create the files for that yourself, and make a pull-request.
 I'd be happy to collaborate with someone implementing some cool additional features.
 
+Any papers going into detail about the pharmacokinetics of various esters that may
+be of interest would be greatly appreciated, to bring the modelling as close to the
+real thing as possible.
+
 ## Disclaimer
 
 I am not a medical professional. The values estimated from this software should not
