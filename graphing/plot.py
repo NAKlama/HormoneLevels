@@ -14,22 +14,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
+import drugs
 
 
-def plot_drugs(data:            Tuple[np.ndarray, Dict[str, np.ndarray]],
+def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]],
                x_window:        Optional[Tuple[float, float]] = None,
                y_window:        Optional[Tuple[float, float]] = None,
                now:             Optional[float] = None,
                # drug_order:      Optional[List[str]] = None,
                x_ticks:         int = 7,
-               y_label:         Optional[str] = None):
+               y_label:         Optional[str] = None,
+               lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
+               confidence_val:  int = 68):
     plt.figure(dpi=800)
     dT, drugs = data
     for name, drug_plot in drugs.items():
-        plt.plot(dT, drug_plot, label=f'{name}')
+        value, minimum, maximum = drug_plot
+        plt.plot(dT, value, label=f'{name}')
+        plt.fill_between(dT, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
+        if lab_data is not None and name in lab_data:
+            plt.scatter(lab_data[name][0], lab_data[name][1], s=10)
     if x_window is not None:
         plt.xlim(left=x_window[0], right=x_window[1])
         plt.xticks(range(int(x_window[0]), int(x_window[1]) + 1, x_ticks))

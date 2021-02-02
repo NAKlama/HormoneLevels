@@ -38,6 +38,7 @@ class BodyModel:
     doses_list: Dict[Drug, List[Dose]]
     labs_list: List[LabData]
     blood_level_factors: Dict[Drug, Tuple[float, float]]
+    lab_levels: Dict[Drug, List[Tuple[datetime, float]]]
     drugs_timeline: Dict[Drug, List[float]]
     duration: int
 
@@ -46,6 +47,8 @@ class BodyModel:
         self.doses_list = {}
         self.drugs_timeline = {}
         self.blood_level_factors = {}
+        self.labs_list = []
+        self.lab_levels = {}
 
     def add_dose(self, drug: Drug, amount: float, time_in: datetime):
         dose = Dose(drug, amount, time_in);
@@ -58,7 +61,7 @@ class BodyModel:
         self.doses_list[dose.drug].sort(key=lambda x: x.time)
 
     def add_lab_data(self, data_in: Union[LabData, List[LabData]]):
-        if type(data_in) is not type(LabData):
+        if type(data_in) is type(LabData):
             data = [data_in]
         else:
             data = data_in
@@ -88,30 +91,60 @@ class BodyModel:
         return self.drugs_timeline[d][i]
 
     def estimate_blood_levels(self):
-        levels: Dict[Drug, List[Tuple[datetime, float]]] = {}
+
         for lab_data in self.labs_list:
             for d in lab_data.labs.keys():
-                levels[d] = []
+                self.lab_levels[d] = []
 
         for lab_data in self.labs_list:
             for d, val in lab_data.labs.items():
-                levels[d].append((lab_data.time, val))
+                self.lab_levels[d].append((lab_data.time, val))
 
-        drugs = set(levels.keys())
+        drugs = set(self.lab_levels.keys())
         for d in drugs:
-            level_matcher = map(lambda x: (self.get_drug_at_timepoint(d, x[0]), x[1]), levels)
+            level_matcher = list(map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])), self.lab_levels[d]))
             estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
-            average_est = sum(map(lambda x: x / len(estimates)), estimates)
-            std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
+            average_est = sum(map(lambda x: x / len(estimates), estimates))
+            levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
+            if len(estimates) > 1:
+                std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
+                # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
+            else:
+                std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
+                # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
             self.blood_level_factors[d] = (average_est, std_dev)
 
-    def get_plot_data(self) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    def get_plot_data(self, adjusted: bool = False, sd_mult: float = 1.0) -> \
+            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
         t_arr = np.array(list(take(self.duration, map(lambda x: x * (1.0/24.0), count()))))
         print(f't_arr.size()={len(t_arr)}')
         out = {}
         for drug, timeline in self.drugs_timeline.items():
-            out[drug.name] = np.array(timeline)
-            print(f't_arr.size({drug.name})={len(out[drug.name])}')
-        return t_arr, out
+            if adjusted:
+                out[drug.name] = (
+                    np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
+                    np.array(list(map(
+                        lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * sd_mult,
+                        timeline))),
+                    np.array(list(map(
+                        lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * sd_mult,
+                        timeline))),
+                )
+            else:
+                arr = np.array(timeline)
+                out[drug.name] = (arr, arr, arr)
+            # print(f't_arr.size({drug.name})={len(out[drug.name])}')
+            return t_arr, out
+
+    def get_plot_lab_levels(self) -> Dict[str, Tuple[List[int], List[float]]]:
+        lab_levels = {}
+        for drug, ll_data in self.lab_levels.items():
+            lab_levels[drug.name] = (
+                list(map(lambda x: (
+                    ((x[0] - datetime.combine(self.starting_date, time())).total_seconds() / (3600 * 24))), ll_data)),
+                list(map(lambda x: x[1], ll_data))
+            )
+
+        return lab_levels
 
 

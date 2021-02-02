@@ -16,3 +16,4 @@
 
 
 from .body_model import BodyModel
+from .lab_data import LabData
