@@ -19,7 +19,7 @@ from distutils.core import setup
 setup(
     name="HormoneLevels",
     description="Compute and graph hormone levels for transgender HRT",
-    version='0.1',
+    version='0.2',
     license="GPLv3",
     author="Nina Alexandra Klama",
     author_email="gitlab@fklama.de",

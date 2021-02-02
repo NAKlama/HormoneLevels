@@ -3,18 +3,29 @@ Compute and graph hormone levels for transgender HRT
 
 ## Current state of development
 
-Since I'm developing this softwares features as I need them, it is currently only for
-transfeminine HRT. It can graph the amount of estradiol valerate inside the body.
+Since I'm developing this software's features as I need them, it is currently only for
+transfeminine HRT. It can graph the amount of estradiol valerate inside the body, and
+using that, and the lab results at certain points, a conversion factor to calculate the
+blood levels from the amount of the ester in the body is calculated, by taking the
+average of the ratio between lab tests and calculated hormone in the body.
+
+The confidence interval is calculated taking the square sum residuals between the
+resulting blood level curve, and the actual lab tests, and calculating the standard
+deviation.
 
 ## Planned features
 
-  - Calculate and plot blood level estimations from known levels at certain points
+  
   - Graphing of long term fitting with known labs to detect shifts in metabolism
     - Ways to adjust for these
   - Different HRT options
     - Different Estradiol Esters
     - Testosterone Esters
     - Different methods of delivery
+    
+## Implemented features
+
+  - Calculate and plot blood level estimations from known levels at certain points
 
 ## Contributing
 
