@@ -26,6 +26,7 @@ deviation.
 ## Implemented features
 
   - Calculate and plot blood level estimations from known levels at certain points
+  - Rough model for gels like Gynokadin and Estrogel
 
 ## Contributing
 
