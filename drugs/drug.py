@@ -51,12 +51,12 @@ class Drug(object):
     def get_metabolites(self, decay_curve: Iterable[float]) -> Dict[Type["Drug"], Iterable[float]]:
         out = {}
         for d, factor in self.metabolites:
-            print(d.get_name())
+            # print(d.get_name())
             if d not in out:
                 out[d] = []
                 out[d].append(repeat(0.0))
             curve = map(lambda x: x * d.one_hour_metabolism() * factor, decay_curve)
-            print(list(take(10, curve)))
+            # print(list(take(10, curve)))
             # metabolites = drug.get_metabolites(curve)
             # for d, crv in metabolites.items():
             #     if d not in out:

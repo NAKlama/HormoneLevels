@@ -56,7 +56,10 @@ model.add_lab_data([
 
 days_into_future = 30
 model.calculate_timeline(date.today() + timedelta(days=days_into_future))
-model.estimate_blood_levels()
+model.estimate_blood_levels(corrected_std_dev=True)
+
+print(model.get_current_blood_level_message(ev))
+
 now = float((datetime.today() - datetime.combine(model.starting_date, time())).total_seconds()) / (3600 * 24)
 
 fortnight_ago = model.duration - (14+days_into_future)*24
@@ -65,11 +68,13 @@ month_ago = model.duration - (30+days_into_future)*24
 # y_window = (0, 8)
 y_window = (0, 400)
 
-# confidence = 68
-# data = model.get_plot_data(True)
+# 68% confidence at a single standard deviation
+confidence = 68
+data = model.get_plot_data(True)
 
-confidence = 95
-data = model.get_plot_data(True, sd_mult=2)
+# 95% Confidence at twice the standard deviation
+# confidence = 95
+# data = model.get_plot_data(True, sd_mult=2)
 
 lab_levels = model.get_plot_lab_levels()
 

@@ -85,13 +85,24 @@ class BodyModel:
                     dose = self.doses_list[d].pop(0)
                     self.drugs_timeline[d][t] += dose.amount
 
-    def get_drug_at_timepoint(self, d: Drug, t: datetime) -> float:
+    def __get_timepoint(self, t: datetime) -> int:
         timepoint = datetime(t.year, t.month, t.day, t.hour)
-        i = math.floor((timepoint - datetime.combine(self.starting_date, time())).total_seconds() / 3600)
-        return self.drugs_timeline[d][i]
+        return math.floor((timepoint - datetime.combine(self.starting_date, time())).total_seconds() / 3600)
 
-    def estimate_blood_levels(self):
+    def get_drug_at_timepoint(self, d: Drug, t: datetime) -> float:
+        return self.drugs_timeline[d][self.__get_timepoint(t)]
 
+    def get_blood_level_at_timepoint(self, d: Drug, t: datetime) -> Tuple[float, float, float]:
+        timeline    = self.drugs_timeline[d]
+        timepoint   = self.__get_timepoint(t)
+        avg, stddev = self.blood_level_factors[d]
+        return timeline[timepoint], avg, stddev
+
+    def get_current_blood_level_message(self, d: Drug) -> str:
+        drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
+        return f"Estimated blood level ({d.name}): {drug_amount * factor_avg:6.2f} ± {drug_amount * factor_stddev:5.2f}"
+
+    def estimate_blood_levels(self, corrected_std_dev: bool = True):
         for lab_data in self.labs_list:
             for d in lab_data.labs.keys():
                 self.lab_levels[d] = []
@@ -106,7 +117,7 @@ class BodyModel:
             estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
             average_est = sum(map(lambda x: x / len(estimates), estimates))
             levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
-            if len(estimates) > 1:
+            if len(estimates) > 1 and corrected_std_dev:
                 std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
                 # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
             else:
@@ -117,17 +128,17 @@ class BodyModel:
     def get_plot_data(self, adjusted: bool = False, sd_mult: float = 1.0) -> \
             Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
         t_arr = np.array(list(take(self.duration, map(lambda x: x * (1.0/24.0), count()))))
-        print(f't_arr.size()={len(t_arr)}')
+        # print(f't_arr.size()={len(t_arr)}')
         out = {}
         for drug, timeline in self.drugs_timeline.items():
             if adjusted:
                 out[drug.name] = (
                     np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
                     np.array(list(map(
-                        lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * sd_mult,
+                        lambda x: x * self.blood_level_factors[drug][0] - x * self.blood_level_factors[drug][1] * sd_mult,
                         timeline))),
                     np.array(list(map(
-                        lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * sd_mult,
+                        lambda x: x * self.blood_level_factors[drug][0] + x * self.blood_level_factors[drug][1] * sd_mult,
                         timeline))),
                 )
             else:
