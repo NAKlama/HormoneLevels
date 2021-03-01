@@ -100,7 +100,9 @@ class BodyModel:
 
     def get_current_blood_level_message(self, d: Drug) -> str:
         drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
-        return f"Estimated blood level ({d.name}): {drug_amount * factor_avg:6.2f} ± {drug_amount * factor_stddev:5.2f}"
+        return f"Estimated blood level ({d.name}): " \
+               f"{drug_amount * factor_avg:6.2f} ± " \
+               f"{factor_stddev * 2:5.2f} (P=.455)"
 
     def estimate_blood_levels(self, corrected_std_dev: bool = True):
         for lab_data in self.labs_list:
@@ -135,10 +137,10 @@ class BodyModel:
                 out[drug.name] = (
                     np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
                     np.array(list(map(
-                        lambda x: x * self.blood_level_factors[drug][0] - x * self.blood_level_factors[drug][1] * sd_mult,
+                        lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * sd_mult,
                         timeline))),
                     np.array(list(map(
-                        lambda x: x * self.blood_level_factors[drug][0] + x * self.blood_level_factors[drug][1] * sd_mult,
+                        lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * sd_mult,
                         timeline))),
                 )
             else:
