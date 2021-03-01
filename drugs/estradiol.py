@@ -24,6 +24,6 @@ class EstradiolValerate(drug.Drug):
             halflife = timedelta(hours=36)
         else:
             halflife = timedelta(hours=1, minutes=30)
-        super().__init__("Estradiol valerate", halflife)
+        super().__init__("Estradiol", halflife)
         if mode == "gel":
             self.set_flood_in([1,2,3,2,1])

@@ -22,6 +22,7 @@ from funcy import map, repeat, take
 
 class Drug(object):
     name:                   str
+    name_blood:             str
     half_life:              timedelta
     drug_class:             Optional[DrugClass]
     flood_in:               Optional[List[float]]
@@ -30,6 +31,7 @@ class Drug(object):
 
     def __init__(self, name: str, half_life: timedelta, drug_class: Optional[DrugClass] = None):
         self.name       = name
+        self.name_blood = name
         self.half_life  = half_life
         self.drug_class = drug_class
         self.flood_in   = None
