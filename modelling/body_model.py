@@ -102,7 +102,7 @@ class BodyModel:
         drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
         return f"Estimated blood level ({d.name}): " \
                f"{drug_amount * factor_avg:6.2f} ± " \
-               f"{factor_stddev * 2:5.2f} (P<.046)"
+               f"{factor_stddev * 2:5.2f} ng/l (P<.046)"
 
     def estimate_blood_levels(self, corrected_std_dev: bool = True):
         for lab_data in self.labs_list:
