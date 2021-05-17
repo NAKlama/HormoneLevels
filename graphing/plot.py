@@ -26,15 +26,17 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                now:             Optional[float] = None,
                # drug_order:      Optional[List[str]] = None,
                x_ticks:         int = 7,
+               x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
-               confidence_val:  int = 68):
+               confidence_val:  Optional[int] = None):
     plt.figure(dpi=800)
     dT, drugs = data
     for name, drug_plot in drugs.items():
         value, minimum, maximum = drug_plot
         plt.plot(dT, value, label=f'{name}')
-        plt.fill_between(dT, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
+        if confidence_val is not None:
+            plt.fill_between(dT, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
         if lab_data is not None and name in lab_data:
             plt.scatter(lab_data[name][0], lab_data[name][1], s=10)
     if x_window is not None:
@@ -45,7 +47,10 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
     plt.grid()
     if now is not None:
         plt.axvline(now)
-    plt.xlabel("Time (days)")
+    if x_label is None:
+        plt.xlabel("Time (days)")
+    else:
+        plt.xlabel(x_label)
     if y_label is None:
         plt.ylabel("Drug in body (mg)")
     else:
