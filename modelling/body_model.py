@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+
 import math
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Union
@@ -24,7 +25,7 @@ import numpy as np
 from drugs.drug import Drug
 from modelling.dose import Dose
 from datetime import datetime, date, timedelta, time
-from funcy import take, map, count
+from funcy import take, map, count, drop
 
 from modelling.lab_data import LabData
 
@@ -41,6 +42,9 @@ class BodyModel:
     lab_levels: Dict[Drug, List[Tuple[datetime, float]]]
     drugs_timeline: Dict[Drug, List[float]]
     duration: int
+    real_duration: int
+    doses_count: int
+    doses_amount: float
 
     def __init__(self, starting_date: date):
         self.starting_date = starting_date
@@ -49,6 +53,10 @@ class BodyModel:
         self.blood_level_factors = {}
         self.labs_list = []
         self.lab_levels = {}
+        self.duration = 0
+        self.real_duration = 0
+        self.doses_count = 0
+        self.doses_amount = 0.0
 
     def add_dose(self, drug: Drug, amount: float, time_in: datetime):
         dose = Dose(drug, amount, time_in);
@@ -59,6 +67,8 @@ class BodyModel:
         for d in dose.get_subdoses():
             self.doses_list[dose.drug].append(d)
         self.doses_list[dose.drug].sort(key=lambda x: x.time)
+        self.doses_count += 1
+        self.doses_amount += amount
 
     def add_lab_data(self, data_in: Union[LabData, List[LabData]]):
         if type(data_in) is type(LabData):
@@ -73,6 +83,7 @@ class BodyModel:
         for drug in drugs:
             self.drugs_timeline[drug] = []
         self.duration = math.ceil((until - self.starting_date).total_seconds() / 3600)
+        self.real_duration = math.ceil((date.today() - self.starting_date).total_seconds() / 3600)
         for t in range(self.duration):
             time_t = datetime.combine(self.starting_date, time()) + timedelta(hours=t)
             for d in drugs:
@@ -148,6 +159,16 @@ class BodyModel:
                 out[drug.name] = (arr, arr, arr)
             # print(f't_arr.size({drug.name})={len(out[drug.name])}')
             return t_arr, out
+
+    def get_statistical_data(self, drug: Drug) -> Tuple[float, float]:
+        blood_levels   = list(drop(7*24,
+                                   take(self.real_duration,
+                                        map(lambda x: x * self.blood_level_factors[drug][0],
+                                            self.drugs_timeline[drug]))))
+        levels_avg     = sum(blood_levels) / len(blood_levels)
+        sq_delta       = list(map(lambda x: (x - levels_avg)**2, blood_levels))
+        levels_std_dev = math.sqrt(sum(sq_delta) / len(blood_levels))
+        return levels_avg, levels_std_dev
 
     def get_plot_lab_levels(self) -> Dict[str, Tuple[List[int], List[float]]]:
         lab_levels = {}
