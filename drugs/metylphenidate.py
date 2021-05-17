@@ -14,8 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# from .estradiol import Estradiol
-from .estradiol_valerate import EstradiolValerate
-from .estradiol_cypionate import EstradiolCypionate
-from .metylphenidate import Methylphenidate
-from .drug import Drug
+
+import drugs.drug as drug
+from datetime import timedelta
+
+
+class Methylphenidate(drug.Drug):
+    def __init__(self):
+        super().__init__("Metylphenidate", timedelta(days=3))
+        self.set_flood_in([1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+                           7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, .5, .5])
