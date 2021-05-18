@@ -29,7 +29,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
-               confidence_val:  Optional[int] = None):
+               confidence_val:  Optional[float] = None):
     plt.figure(dpi=800)
     dT, drugs = data
     for name, drug_plot in drugs.items():
