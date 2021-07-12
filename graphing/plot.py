@@ -26,7 +26,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                y_window:        Optional[Tuple[float, float]] = None,
                now:             Optional[float] = None,
                # drug_order:      Optional[List[str]] = None,
-               x_ticks:         int = 7,
+               x_ticks:         float = 7,
                x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,

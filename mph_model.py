@@ -42,10 +42,10 @@ y_window = (0, 10)
 duration_factor = model.step / timedelta(hours=1)
 duration = model.duration * duration_factor
 
-data = model.get_plot_data()
+data = model.get_plot_data(timedelta(hours=1))
 
 plot_drugs(data=data,
-           x_window=(0, duration/24.0),
+           x_window=(0, duration),
            y_window=y_window,
            x_label="Time (hours)",
            x_ticks=3,

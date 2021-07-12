@@ -140,10 +140,10 @@ class BodyModel:
                 # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
             self.blood_level_factors[d] = (average_est, std_dev)
 
-    def get_plot_data(self, adjusted: bool = False, sd_mult: float = 1.0) -> \
+    def get_plot_data(self, plot_delta: timedelta = timedelta(days=1), adjusted: bool = False, sd_mult: float = 1.0) -> \
             Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
         t_arr = np.array(list(take(self.duration, map(lambda x:
-                                                          x * (self.step.total_seconds()/(24.0*60.0*60.0)),
+                                                          x * (self.step.total_seconds()/plot_delta.total_seconds()),
                                                       count()))))
         # print(f't_arr.size()={len(t_arr)}')
         out = {}
