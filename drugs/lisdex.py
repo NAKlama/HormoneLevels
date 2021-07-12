@@ -14,9 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# from .estradiol import Estradiol
-from .estradiol_valerate import EstradiolValerate
-from .estradiol_cypionate import EstradiolCypionate
-from .metylphenidate import Methylphenidate
-from .lisdex import Lisdexamphetamine, Dexamphetamine
-from .drug import Drug
+
+import drugs.drug as drug
+from datetime import timedelta
+
+
+class Dexamphetamine(drug.Drug):
+  def __init__(self):
+    super().__init__("Dexamphetamine", timedelta(hours=10))
+
+
+class Lisdexamphetamine(drug.Drug):
+    def __init__(self):
+        super().__init__("Lisdexamphetamine", timedelta(minutes=30))
+        flood_in = [0.0] * 15
+        for i in range(30):
+          flood_in.append((i+1)/30)
+        for i in [1] * 60:
+          flood_in.append(i)
+        for i in range(45):
+          flood_in.append((45-i)/45)
+        self.set_flood_in(flood_in)
+        self.flood_in_timedelta = timedelta(minutes=1)
+        self.add_metabolite(Dexamphetamine(), 0.296)

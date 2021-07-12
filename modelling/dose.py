@@ -53,11 +53,3 @@ class Dose:
             return self.amount * factor
         return map(calc_decay, count())
 
-    # def get_metabolites(self) -> Dict[Type[Drug], Iterable[float]]:
-    #     out = {}
-    #     metabolites = {}
-    #     for drug, factor in self.drug.metabolites:
-    #         out[drug] = map(lambda now, prev: (prev - now) * factor,
-    #                         with_prev(self.get_decay_curve(), fill=0.0))
-    #     return out
-

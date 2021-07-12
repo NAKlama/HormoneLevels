@@ -81,6 +81,16 @@ class BodyModel:
 
     def calculate_timeline(self, until: date):
         drugs = set(self.doses_list.keys())
+        while True:
+            start_len = len(drugs)
+            new_drugs = []
+            for d in drugs:
+                for m, x in d.metabolites:
+                    new_drugs.append(m)
+            for d in new_drugs:
+                drugs.add(d)
+            if len(drugs) == start_len:
+                break
         for drug in drugs:
             self.drugs_timeline[drug] = []
         self.duration = math.ceil((until - self.starting_date).total_seconds() / self.step.total_seconds())
@@ -90,10 +100,16 @@ class BodyModel:
             for d in drugs:
                 if t > 0:
                     last_val = self.drugs_timeline[d][-1]
-                    self.drugs_timeline[d].append(last_val * d.get_metabolism_factor(self.step))
+                    curr_val = last_val * d.get_metabolism_factor(self.step)
+                    self.drugs_timeline[d].append(curr_val)
+                    metabolites = d.get_metabolites(last_val - curr_val)
+                    for drug, amount in metabolites:
+                        if drug not in self.doses_list:
+                            self.doses_list[drug] = []
+                        self.doses_list[drug].insert(0, Dose(drug, amount, time_t, True))
                 else:
                     self.drugs_timeline[d].append(0.0)
-                while self.doses_list[d] and len(self.doses_list[d]) > 0 and self.doses_list[d][0].time <= time_t:
+                while d in self.doses_list and self.doses_list[d] and len(self.doses_list[d]) > 0 and self.doses_list[d][0].time <= time_t:
                     dose = self.doses_list[d].pop(0)
                     self.drugs_timeline[d][t] += dose.amount
 
@@ -147,7 +163,9 @@ class BodyModel:
                                                       count()))))
         # print(f't_arr.size()={len(t_arr)}')
         out = {}
-        for drug, timeline in self.drugs_timeline.items():
+        drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: x.name)
+        for drug in drugs:
+            timeline = self.drugs_timeline[drug]
             if adjusted:
                 out[drug.name_blood] = (
                     np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
@@ -162,7 +180,7 @@ class BodyModel:
                 arr = np.array(timeline)
                 out[drug.name_blood] = (arr, arr, arr)
             # print(f't_arr.size({drug.name})={len(out[drug.name])}')
-            return t_arr, out
+        return t_arr, out
 
     def get_statistical_data(self, drug: Drug) -> Tuple[float, float]:
         blood_levels   = list(drop(7*24,
