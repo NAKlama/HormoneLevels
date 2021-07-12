@@ -42,13 +42,13 @@ class Dose:
             flood_in_lenght = len(self.drug.flood_in)
             for t, flood_in in enumerate(self.drug.flood_in):
                 dose = self.amount * flood_in
-                out.append(Dose(self.drug, dose, self.time + timedelta(hours=t), False))
+                out.append(Dose(self.drug, dose, self.time + self.drug.flood_in_timedelta * t, False))
             return out
 
-    def get_decay_curve(self) -> Iterable[float]:
+    def get_decay_curve(self, stepping: timedelta) -> Iterable[float]:
         def calc_decay(t: int) -> float:
-            hl_hours = self.drug.half_life.total_seconds() / 3600.0
-            factor = 2 ** (float(t) / hl_hours)
+            hl_steps = self.drug.half_life.total_seconds() / stepping.total_seconds()
+            factor = 2 ** (float(t) / hl_steps)
             return self.amount * factor
         return map(calc_decay, count())
 

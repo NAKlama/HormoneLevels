@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-
 import math
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Union
@@ -30,12 +29,9 @@ from funcy import take, map, count, drop
 from modelling.lab_data import LabData
 
 
-def delta_to_hours(td: timedelta) -> int:
-    return math.ceil(td.total_seconds() / 3600.0)
-
-
 class BodyModel:
     starting_date: date
+    step: timedelta
     doses_list: Dict[Drug, List[Dose]]
     labs_list: List[LabData]
     blood_level_factors: Dict[Drug, Tuple[float, float]]
@@ -46,8 +42,9 @@ class BodyModel:
     doses_count: int
     doses_amount: float
 
-    def __init__(self, starting_date: date):
+    def __init__(self, starting_date: date, timesteps: timedelta):
         self.starting_date = starting_date
+        self.step = timesteps
         self.doses_list = {}
         self.drugs_timeline = {}
         self.blood_level_factors = {}
@@ -58,8 +55,12 @@ class BodyModel:
         self.doses_count = 0
         self.doses_amount = 0.0
 
+    @staticmethod
+    def delta_to_hours(td: timedelta) -> int:
+        return math.ceil(td.total_seconds() / 3600.0)
+
     def add_dose(self, drug: Drug, amount: float, time_in: datetime):
-        dose = Dose(drug, amount, time_in);
+        dose = Dose(drug, amount, time_in)
         if dose.time < datetime.combine(self.starting_date, time()):
             raise Exception("Doses cannot be before starting date")
         if dose.drug not in self.doses_list:
@@ -82,14 +83,14 @@ class BodyModel:
         drugs = set(self.doses_list.keys())
         for drug in drugs:
             self.drugs_timeline[drug] = []
-        self.duration = math.ceil((until - self.starting_date).total_seconds() / 3600)
-        self.real_duration = math.ceil((date.today() - self.starting_date).total_seconds() / 3600)
+        self.duration = math.ceil((until - self.starting_date).total_seconds() / self.step.total_seconds())
+        self.real_duration = math.ceil((date.today() - self.starting_date).total_seconds() / self.step.total_seconds())
         for t in range(self.duration):
-            time_t = datetime.combine(self.starting_date, time()) + timedelta(hours=t)
+            time_t = datetime.combine(self.starting_date, time()) + self.step * t
             for d in drugs:
                 if t > 0:
                     last_val = self.drugs_timeline[d][-1]
-                    self.drugs_timeline[d].append(last_val * d.one_hour_metabolism())
+                    self.drugs_timeline[d].append(last_val * d.get_metabolism_factor(self.step))
                 else:
                     self.drugs_timeline[d].append(0.0)
                 while self.doses_list[d] and len(self.doses_list[d]) > 0 and self.doses_list[d][0].time <= time_t:
@@ -98,7 +99,8 @@ class BodyModel:
 
     def __get_timepoint(self, t: datetime) -> int:
         timepoint = datetime(t.year, t.month, t.day, t.hour)
-        return math.floor((timepoint - datetime.combine(self.starting_date, time())).total_seconds() / 3600)
+        return math.floor((timepoint - datetime.combine(self.starting_date,
+                                                        time())).total_seconds() / self.step.total_seconds())
 
     def get_drug_at_timepoint(self, d: Drug, t: datetime) -> float:
         return self.drugs_timeline[d][self.__get_timepoint(t)]
@@ -140,7 +142,9 @@ class BodyModel:
 
     def get_plot_data(self, adjusted: bool = False, sd_mult: float = 1.0) -> \
             Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
-        t_arr = np.array(list(take(self.duration, map(lambda x: x * (1.0/24.0), count()))))
+        t_arr = np.array(list(take(self.duration, map(lambda x:
+                                                          x * (self.step.total_seconds()/(24.0*60.0*60.0)),
+                                                      count()))))
         # print(f't_arr.size()={len(t_arr)}')
         out = {}
         for drug, timeline in self.drugs_timeline.items():

@@ -26,16 +26,18 @@ class Drug(object):
     half_life:              timedelta
     drug_class:             Optional[DrugClass]
     flood_in:               Optional[List[float]]
+    flood_in_timedelta:     timedelta
     blood_value_factor:     float
     metabolites:             List[Tuple[Type["Drug"], float]]
 
     def __init__(self, name: str, half_life: timedelta, drug_class: Optional[DrugClass] = None):
-        self.name       = name
-        self.name_blood = name
-        self.half_life  = half_life
-        self.drug_class = drug_class
-        self.flood_in   = None
-        self.metabolites = []
+        self.name               = name
+        self.name_blood         = name
+        self.half_life          = half_life
+        self.drug_class         = drug_class
+        self.flood_in           = None
+        self.flood_in_timedelta = timedelta(hours=1)
+        self.metabolites        = []
 
     def set_flood_in(self, flood_in: List[float]):
         self.flood_in = flood_in
@@ -45,27 +47,27 @@ class Drug(object):
     def add_metabolite(self, drug_in: Type["Drug"], factor: float):
         self.metabolites.append((drug_in, factor))
 
-    def one_hour_metabolism(self) -> float:
-        hl_hours = self.half_life.total_seconds() / 3600.0
-        factor = 2 ** (-1.0 / hl_hours)
+    def get_metabolism_factor(self, step: timedelta) -> float:
+        hl_step = self.half_life.total_seconds() / step.total_seconds()
+        factor = 2 ** (-1.0 / hl_step)
         return factor
 
-    def get_metabolites(self, decay_curve: Iterable[float]) -> Dict[Type["Drug"], Iterable[float]]:
-        out = {}
-        for d, factor in self.metabolites:
-            # print(d.get_name())
-            if d not in out:
-                out[d] = []
-                out[d].append(repeat(0.0))
-            curve = map(lambda x: x * d.one_hour_metabolism() * factor, decay_curve)
-            # print(list(take(10, curve)))
-            # metabolites = drug.get_metabolites(curve)
-            # for d, crv in metabolites.items():
-            #     if d not in out:
-            #         out[d] = []
-            #         out[d].append(repeat(0.0))
-            #     out[d].append(crv)
-        return out
+    # def get_metabolites(self, decay_curve: Iterable[float]) -> Dict[Type["Drug"], Iterable[float]]:
+    #     out = {}
+    #     for d, factor in self.metabolites:
+    #         # print(d.get_name())
+    #         if d not in out:
+    #             out[d] = []
+    #             out[d].append(repeat(0.0))
+    #         curve = map(lambda x: x * d.one_hour_metabolism() * factor, decay_curve)
+    #         # print(list(take(10, curve)))
+    #         # metabolites = drug.get_metabolites(curve)
+    #         # for d, crv in metabolites.items():
+    #         #     if d not in out:
+    #         #         out[d] = []
+    #         #         out[d].append(repeat(0.0))
+    #         #     out[d].append(crv)
+    #     return out
 
     def get_name(self) -> str:
         return self.name

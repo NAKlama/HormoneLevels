@@ -25,6 +25,7 @@ setup(
     author_email="gitlab@fklama.de",
     requires=[
         'funcy',
-        'matplotlib'
+        'matplotlib',
+        'numpy'
     ],
 )
