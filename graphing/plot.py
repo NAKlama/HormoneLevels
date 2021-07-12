@@ -17,7 +17,8 @@
 from typing import Optional, Tuple, Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
-import drugs
+# import drugs
+from funcy import first
 
 
 def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]],
@@ -29,7 +30,8 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
-               confidence_val:  Optional[float] = None):
+               confidence_val:  Optional[float] = None,
+               avg_levels:       Optional[Dict[str, Tuple[float, float, str]]] = None):
     plt.figure(dpi=800)
     dT, drugs = data
     for name, drug_plot in drugs.items():
@@ -39,6 +41,13 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
             plt.fill_between(dT, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
         if lab_data is not None and name in lab_data:
             plt.scatter(lab_data[name][0], lab_data[name][1], s=10)
+    if avg_levels is not None:
+        for name, avg_level in avg_levels.items():
+            avg, std_dev, color = avg_level
+            avg_line = np.array([avg for i in range(len(dT))])
+            plt.plot(dT, avg_line, label=f'{name} average value', color=color)
+            plt.axhspan(avg - std_dev, avg + std_dev, facecolor=color, alpha=0.2)
+            plt.axhspan(avg - 2*std_dev, avg + 2*std_dev, facecolor=color, alpha=0.15)
     if x_window is not None:
         plt.xlim(left=x_window[0], right=x_window[1])
         plt.xticks(range(int(x_window[0]), int(x_window[1]) + 1, x_ticks))
