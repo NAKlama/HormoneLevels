@@ -28,34 +28,35 @@ damph  = Dexamphetamine()
 # The resolution of the modelling is currently fixed to one hour, and this is a quick
 # way to increase the resolution to 2.5 minutes.
 
-model = BodyModel(date(2021, 7, 12), timedelta(minutes=5))
-dose = 30
+doses_pattern = [
+  [(9, 30)],
+  [(9, 40)],
+  [(9, 30), (12, 10)],
+  [(9, 30), (13, 10)],
+  [(9, 30), (14, 10)],
+  [(9, 50)],
+]
 
-model.add_dose(lisdex, dose, datetime(2021, 7, 12, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 13, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 14, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 15, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 16, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 17, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 18, 0))
-model.add_dose(lisdex, dose, datetime(2021, 7, 19, 0))
-model.add_dose(lisdex, 10, datetime(2021, 7, 19, 4))
-# model.add_dose(lisdex, 50, datetime(2021, 7, 19, 0))
+for pattern in doses_pattern:
+  model = BodyModel(date(2021, 7, 12), timedelta(minutes=5))
 
+  for i in range(12, 20):
+    for hour, dose in pattern:
+      model.add_dose(lisdex, dose, datetime(2021, 7, i, hour))
 
-days_into_future = 10
-model.calculate_timeline(date(2021, 7, 12) + timedelta(days=days_into_future))
-# model.estimate_blood_levels(corrected_std_dev=True)
+  days_into_future = 10
+  model.calculate_timeline(date(2021, 7, 12) + timedelta(days=days_into_future))
+  # model.estimate_blood_levels(corrected_std_dev=True)
 
-y_window = (0, 20)
-duration_factor = model.step / timedelta(hours=1)
-duration = model.duration * duration_factor
+  y_window = (0, 20)
+  duration_factor = model.step / timedelta(hours=1)
+  duration = model.duration * duration_factor
 
-data = model.get_plot_data(timedelta(hours=1))
+  data = model.get_plot_data(timedelta(hours=1), offset=-7*24)
 
-plot_drugs(data=data,
-           x_window=(24*7, 24*8),
-           y_window=y_window,
-           x_label="Time (hours)",
-           x_ticks=1,
-           y_label="Substance in body (mg)")
+  plot_drugs(data=data,
+             x_window=(0, 24),
+             y_window=y_window,
+             x_label="Time (hours)",
+             x_ticks=1,
+             y_label="Substance in body (mg)")
