@@ -31,7 +31,7 @@ class Dose:
     def __init__(self, drug: Drug, amount: float, time: datetime, is_subdose: bool = False):
         self.drug = drug
         self.amount = amount
-        self.time = datetime(time.year, time.month, time.day, time.hour)
+        self.time = datetime(time.year, time.month, time.day, time.hour, time.minute, time.second)
         self.hour_dose = is_subdose
 
     def get_subdoses(self) -> List["Dose"]:
@@ -42,7 +42,8 @@ class Dose:
             flood_in_lenght = len(self.drug.flood_in)
             for t, flood_in in enumerate(self.drug.flood_in):
                 dose = self.amount * flood_in
-                out.append(Dose(self.drug, dose, self.time + self.drug.flood_in_timedelta * t, False))
+                dose_time = self.time + (self.drug.flood_in_timedelta * t)
+                out.append(Dose(self.drug, dose, dose_time, False))
             return out
 
     def get_decay_curve(self, stepping: timedelta) -> Iterable[float]:

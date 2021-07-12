@@ -21,6 +21,7 @@ from datetime import timedelta
 
 class Methylphenidate(drug.Drug):
     def __init__(self):
-        super().__init__("Metylphenidate", timedelta(days=3))
+        super().__init__("Metylphenidate", timedelta(hours=3))
         self.set_flood_in([1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
                            7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, .5, .5])
+        self.flood_in_timedelta = timedelta(minutes=2.5)
