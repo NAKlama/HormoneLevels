@@ -145,7 +145,7 @@ class BodyModel:
         out = {}
         for drug, timeline in self.drugs_timeline.items():
             if adjusted:
-                out[drug.name] = (
+                out[drug.name_blood] = (
                     np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
                     np.array(list(map(
                         lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * sd_mult,
@@ -156,7 +156,7 @@ class BodyModel:
                 )
             else:
                 arr = np.array(timeline)
-                out[drug.name] = (arr, arr, arr)
+                out[drug.name_blood] = (arr, arr, arr)
             # print(f't_arr.size({drug.name})={len(out[drug.name])}')
             return t_arr, out
 

@@ -30,12 +30,12 @@ mph = Methylphenidate()
 model = BodyModel(date(2021, 5, 17))
 
 model.add_dose(mph, 10, datetime(2021, 5, 17, 0))
-model.add_dose(mph,  5, datetime(2021, 5, 20, 0))
-model.add_dose(mph,  5, datetime(2021, 5, 23, 0))
+# model.add_dose(mph,  5, datetime(2021, 5, 21, 0))
+# model.add_dose(mph,  5, datetime(2021, 5, 25, 0))
 
 
-days_into_future = 12
-model.calculate_timeline(date.today() + timedelta(days=days_into_future))
+days_into_future = 24
+model.calculate_timeline(date(2021, 5, 17) + timedelta(days=days_into_future))
 model.estimate_blood_levels(corrected_std_dev=True)
 
 y_window = (0, 10)
@@ -45,6 +45,6 @@ data = model.get_plot_data()
 plot_drugs(data=data,
            x_window=(0, model.duration/24.0),
            y_window=y_window,
-           x_label="Time(hours)",
-           x_ticks=2,
-           y_label="Proportionate dose")
+           x_label="Time (hours)",
+           x_ticks=3,
+           y_label="MPH in body (mg)")
