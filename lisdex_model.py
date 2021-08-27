@@ -29,15 +29,15 @@ damph  = Dexamphetamine()
 # way to increase the resolution to 2.5 minutes.
 
 doses_pattern = [
-  [(9, 30)],
-  [(9, 40)],
-  [(9, 30), (12, 10)],
-  [(9, 30), (13, 10)],
-  [(9, 30), (14, 10)],
-  [(9, 50)],
+  ([(9, 30)], "Lisdex 30mg@9:00"),
+  ([(9, 40)], "Lisdex 40mg@9:00"),
+  ([(9, 30), (12, 10)], "Lisdex 30mg@9:00, 10mg@12:00"),
+  ([(9, 30), (13, 10)], "Lisdex 30mg@9:00, 10mg@13:00"),
+  ([(9, 30), (14, 10)], "Lisdex 30mg@9:00, 10mg@14:00"),
+  ([(9, 50)], "Lisdex 50mg@9:00"),
 ]
 
-for pattern in doses_pattern:
+for pattern, title in doses_pattern:
   model = BodyModel(date(2021, 7, 12), timedelta(minutes=5))
 
   for i in range(12, 20):
@@ -55,6 +55,7 @@ for pattern in doses_pattern:
   data = model.get_plot_data(timedelta(hours=1), offset=-7*24)
 
   plot_drugs(data=data,
+             title=title,
              x_window=(0, 24),
              y_window=y_window,
              x_label="Time (hours)",

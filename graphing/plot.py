@@ -29,10 +29,13 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                x_ticks:         float = 7,
                x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
+               title:           Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
                confidence_val:  Optional[float] = None,
                avg_levels:       Optional[Dict[str, Tuple[float, float, str]]] = None):
     plt.figure(dpi=800)
+    if title is not None:
+        plt.title(title)
     dT, drugs = data
     for name, drug_plot in drugs.items():
         value, minimum, maximum = drug_plot
