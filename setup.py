@@ -23,7 +23,7 @@ setup(
     license="GPLv3",
     author="Nina Alexandra Klama",
     author_email="gitlab@fklama.de",
-    requires=[
+    install_requires=[
         'funcy',
         'matplotlib',
         'numpy'
