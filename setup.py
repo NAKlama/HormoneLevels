@@ -17,15 +17,15 @@
 from distutils.core import setup
 
 setup(
-    name="HormoneLevels",
-    description="Compute and graph hormone levels for transgender HRT",
-    version='0.4.0',
-    license="GPLv3",
-    author="Nina Alexandra Klama",
-    author_email="gitlab@fklama.de",
-    install_requires=[
-        'funcy',
-        'matplotlib',
-        'numpy'
-    ],
+  name="HormoneLevels",
+  description="Compute and graph hormone levels for transgender HRT",
+  version='0.4.0',
+  license="GPLv3",
+  author="Nina Alexandra Klama",
+  author_email="gitlab@fklama.de",
+  install_requires=[
+    'funcy',
+    'matplotlib',
+    'numpy'
+  ],
 )

@@ -22,34 +22,34 @@ from funcy import map, count
 
 
 class Dose:
-    drug:   Drug
-    amount: float
-    time:   datetime
-    hour_dose: bool
-    new_dose: bool
+  drug:   Drug
+  amount: float
+  time:   datetime
+  hour_dose: bool
+  new_dose: bool
 
-    def __init__(self, drug: Drug, amount: float, time: datetime, is_subdose: bool = False):
-        self.drug = drug
-        self.amount = amount
-        self.time = datetime(time.year, time.month, time.day, time.hour, time.minute, time.second)
-        self.hour_dose = is_subdose
+  def __init__(self, drug: Drug, amount: float, time: datetime, is_subdose: bool = False):
+    self.drug = drug
+    self.amount = amount
+    self.time = datetime(time.year, time.month, time.day, time.hour, time.minute, time.second)
+    self.hour_dose = is_subdose
 
-    def get_subdoses(self) -> List["Dose"]:
-        if self.drug.flood_in is None or self.hour_dose is True:
-            return [Dose(self.drug, self.amount, self.time, True)]
-        else:
-            out = []
-            flood_in_lenght = len(self.drug.flood_in)
-            for t, flood_in in enumerate(self.drug.flood_in):
-                dose = self.amount * flood_in
-                dose_time = self.time + (self.drug.flood_in_timedelta * t)
-                out.append(Dose(self.drug, dose, dose_time, False))
-            return out
+  def get_subdoses(self) -> List["Dose"]:
+    if self.drug.flood_in is None or self.hour_dose is True:
+      return [Dose(self.drug, self.amount, self.time, True)]
+    else:
+      out = []
+      flood_in_lenght = len(self.drug.flood_in)
+      for t, flood_in in enumerate(self.drug.flood_in):
+        dose = self.amount * flood_in
+        dose_time = self.time + (self.drug.flood_in_timedelta * t)
+        out.append(Dose(self.drug, dose, dose_time, False))
+      return out
 
-    def get_decay_curve(self, stepping: timedelta) -> Iterable[float]:
-        def calc_decay(t: int) -> float:
-            hl_steps = self.drug.half_life.total_seconds() / stepping.total_seconds()
-            factor = 2 ** (float(t) / hl_steps)
-            return self.amount * factor
-        return map(calc_decay, count())
+  def get_decay_curve(self, stepping: timedelta) -> Iterable[float]:
+    def calc_decay(t: int) -> float:
+      hl_steps = self.drug.half_life.total_seconds() / stepping.total_seconds()
+      factor = 2 ** (float(t) / hl_steps)
+      return self.amount * factor
+    return map(calc_decay, count())
 
