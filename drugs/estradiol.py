@@ -21,9 +21,9 @@ from datetime import timedelta
 class EstradiolValerate(drug.Drug):
   def __init__(self, mode: str = ""):
     if mode == "gel":
-      halflife = timedelta(hours=36)
+      half_life = timedelta(hours=36)
     else:
-      halflife = timedelta(hours=1, minutes=30)
-    super().__init__("Estradiol", halflife)
+      half_life = timedelta(hours=1, minutes=30)
+    super().__init__("Estradiol", half_life)
     if mode == "gel":
-      self.set_flood_in([1,2,3,2,1])
+      self.set_flood_in([1, 2, 3, 2, 1])

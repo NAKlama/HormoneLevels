@@ -25,27 +25,27 @@ ev = EstradiolValerate()
 # Adjust the dates to be a few days in the past, but all after the BodyModel start date
 # for a small demonstration
 
-model = BodyModel(date(2020, 12, 12))
+model = BodyModel(date(2020, 12, 12), timedelta(hours=1))
 
 model.add_dose(ev, 2.5, datetime(2020, 12, 12, 9))
-model.add_dose(ev, 2.5, datetime(2020, 12, 13, 9))
+model.add_dose(ev, 2.5, datetime(2020, 12, 13, 8))
 model.add_dose(ev, 2.5, datetime(2020, 12, 15, 9))
-model.add_dose(ev, 2.5, datetime(2020, 12, 18, 11))
+model.add_dose(ev, 2.5, datetime(2020, 12, 18, 10))
 model.add_dose(ev, 2.5, datetime(2020, 12, 21, 9))
 model.add_dose(ev, 2.5, datetime(2020, 12, 23, 9))
-model.add_dose(ev, 2.5, datetime(2020, 12, 26, 15))
+model.add_dose(ev, 2.5, datetime(2020, 12, 26, 14))
 model.add_dose(ev, 2.5, datetime(2020, 12, 29, 11))
-model.add_dose(ev, 2.5, datetime(2021,  1,  1, 12))
+model.add_dose(ev, 2.5, datetime(2021,  1,  1, 13))
 model.add_dose(ev, 2.5, datetime(2021,  1,  4, 9))
-model.add_dose(ev, 2.5, datetime(2021,  1,  7, 12))
+model.add_dose(ev, 2.5, datetime(2021,  1,  7, 11))
 model.add_dose(ev, 2.5, datetime(2021,  1,  9, 9))
 model.add_dose(ev, 2.5, datetime(2021,  1, 12, 9))
-model.add_dose(ev, 2.5, datetime(2021,  1, 15, 9))
+model.add_dose(ev, 2.5, datetime(2021,  1, 15, 7))
 model.add_dose(ev, 3.0, datetime(2021,  1, 18, 9))
 model.add_dose(ev, 2.4, datetime(2021,  1, 21, 9))
-model.add_dose(ev, 2.9, datetime(2021,  1, 24, 9))
+model.add_dose(ev, 2.9, datetime(2021,  1, 24, 10))
 model.add_dose(ev, 2.7, datetime(2021,  1, 27, 10))
-model.add_dose(ev, 3.0, datetime(2021,  1, 30, 10))
+model.add_dose(ev, 3.0, datetime(2021,  1, 30, 12))
 model.add_dose(ev, 2.5, datetime(2021,  2, 1, 9))
 model.add_dose(ev, 2.9, datetime(2021,  2, 3, 8))
 
@@ -70,7 +70,7 @@ y_window = (0, 400)
 
 # 68% confidence at a single standard deviation
 confidence = 68
-data = model.get_plot_data(True)
+data = model.get_plot_data(timedelta(days=1), True)
 
 # 95% Confidence at twice the standard deviation
 # confidence = 95

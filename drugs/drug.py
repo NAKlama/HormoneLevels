@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Tuple, Type, Iterable, Dict
+from typing import Optional, List, Tuple
 from drugs.drug_classes import DrugClass
 from datetime import timedelta
-from funcy import map, repeat, take
+from funcy import map
 
 
 class Drug(object):

@@ -17,8 +17,6 @@
 from typing import Optional, Tuple, Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
-# import drugs
-from funcy import first
 
 
 def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]],
@@ -26,7 +24,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
                y_window:        Optional[Tuple[float, float]] = None,
                now:             Optional[float] = None,
                # drug_order:      Optional[List[str]] = None,
-               x_ticks:         float = 7,
+               x_ticks:         int = 7,
                x_label:         Optional[str] = None,
                y_label:         Optional[str] = None,
                title:           Optional[str] = None,
@@ -36,19 +34,19 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
   plt.figure(dpi=800)
   if title is not None:
     plt.title(title)
-  dT, drugs = data
+  d_t, drugs = data
   for name, drug_plot in drugs.items():
     value, minimum, maximum = drug_plot
-    plt.plot(dT, value, label=f'{name}')
+    plt.plot(d_t, value, label=f'{name}')
     if confidence_val is not None:
-      plt.fill_between(dT, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
+      plt.fill_between(d_t, minimum, maximum, label=f'{name} {confidence_val}% confidence interval', alpha=0.5)
     if lab_data is not None and name in lab_data:
       plt.scatter(lab_data[name][0], lab_data[name][1], s=10)
   if avg_levels is not None:
     for name, avg_level in avg_levels.items():
       avg, std_dev, color = avg_level
-      avg_line = np.array([avg for i in range(len(dT))])
-      plt.plot(dT, avg_line, label=f'{name} average value', color=color)
+      avg_line = np.array([avg for _ in range(len(d_t))])
+      plt.plot(d_t, avg_line, label=f'{name} average value', color=color)
       plt.axhspan(avg - std_dev, avg + std_dev, facecolor=color, alpha=0.2)
       plt.axhspan(avg - 2*std_dev, avg + 2*std_dev, facecolor=color, alpha=0.15)
   if x_window is not None:
@@ -69,4 +67,3 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np
     plt.ylabel(y_label)
   plt.legend()
   plt.show()
-

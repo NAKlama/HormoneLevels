@@ -18,7 +18,7 @@ from drugs import *
 from modelling import *
 from graphing.plot import plot_drugs
 
-from datetime import date, datetime, timedelta, time
+from datetime import date, datetime, timedelta
 
 mph = Methylphenidate()
 

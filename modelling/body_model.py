@@ -16,7 +16,6 @@
 
 
 import math
-from dataclasses import dataclass
 from typing import List, Dict, Tuple, Union
 
 import numpy as np
@@ -42,9 +41,9 @@ class BodyModel:
   doses_count: int
   doses_amount: float
 
-  def __init__(self, starting_date: date, timesteps: timedelta):
+  def __init__(self, starting_date: date, time_steps: timedelta):
     self.starting_date = starting_date
-    self.step = timesteps
+    self.step = time_steps
     self.doses_list = {}
     self.drugs_timeline = {}
     self.blood_level_factors = {}
@@ -65,7 +64,7 @@ class BodyModel:
       raise Exception("Doses cannot be before starting date")
     if dose.drug not in self.doses_list:
       self.doses_list[dose.drug] = []
-    for d in dose.get_subdoses():
+    for d in dose.get_partial_doses():
       self.doses_list[dose.drug].append(d)
     self.doses_list[dose.drug].sort(key=lambda x: x.time)
     self.doses_count += 1
@@ -109,7 +108,10 @@ class BodyModel:
             self.doses_list[drug].insert(0, Dose(drug, amount, time_t, True))
         else:
           self.drugs_timeline[d].append(0.0)
-        while d in self.doses_list and self.doses_list[d] and len(self.doses_list[d]) > 0 and self.doses_list[d][0].time <= time_t:
+        while d in self.doses_list and \
+                self.doses_list[d] and \
+                len(self.doses_list[d]) > 0 and \
+                self.doses_list[d][0].time <= time_t:
           dose = self.doses_list[d].pop(0)
           self.drugs_timeline[d][t] += dose.amount
 
@@ -159,7 +161,7 @@ class BodyModel:
   def get_plot_data(self,
                     plot_delta: timedelta = timedelta(days=1),
                     adjusted: bool = False,
-                    sd_mult: float = 1.0,
+                    stddev_multiplier: float = 1.0,
                     offset: float = 0.0) -> \
           Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
     t_arr = np.array(list(take(self.duration,
@@ -175,10 +177,10 @@ class BodyModel:
         out[drug.name_blood] = (
           np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
           np.array(list(map(
-            lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * sd_mult,
+            lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * stddev_multiplier,
             timeline))),
           np.array(list(map(
-            lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * sd_mult,
+            lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * stddev_multiplier,
             timeline))),
         )
       else:

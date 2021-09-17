@@ -34,12 +34,11 @@ class Dose:
     self.time = datetime(time.year, time.month, time.day, time.hour, time.minute, time.second)
     self.hour_dose = is_subdose
 
-  def get_subdoses(self) -> List["Dose"]:
+  def get_partial_doses(self) -> List["Dose"]:
     if self.drug.flood_in is None or self.hour_dose is True:
       return [Dose(self.drug, self.amount, self.time, True)]
     else:
       out = []
-      flood_in_lenght = len(self.drug.flood_in)
       for t, flood_in in enumerate(self.drug.flood_in):
         dose = self.amount * flood_in
         dose_time = self.time + (self.drug.flood_in_timedelta * t)
