@@ -209,5 +209,3 @@ class BodyModel:
       )
 
     return lab_levels
-
-
