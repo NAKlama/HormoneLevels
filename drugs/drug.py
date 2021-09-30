@@ -28,7 +28,7 @@ class Drug(object):
   flood_in:               Optional[List[float]]
   flood_in_timedelta:     timedelta
   blood_value_factor:     float
-  metabolites:            List[Tuple["Drug", float]]
+  metabolites:            List[Tuple[str, float]]
 
   def __init__(self, name: str, half_life: timedelta, drug_class: Optional[DrugClass] = None):
     self.name               = name
@@ -44,7 +44,7 @@ class Drug(object):
     total = sum(flood_in)
     self.flood_in = list(map(lambda x: x/total, self.flood_in))
 
-  def add_metabolite(self, drug_in: "Drug", factor: float):
+  def add_metabolite(self, drug_in: str, factor: float):
     self.metabolites.append((drug_in, factor))
 
   def get_metabolism_factor(self, step: timedelta) -> float:
@@ -52,7 +52,7 @@ class Drug(object):
     factor = 2 ** (-1.0 / hl_step)
     return factor
 
-  def get_metabolites(self, decay_amount: float) -> List[Tuple["Drug", float]]:
+  def get_metabolites(self, decay_amount: float) -> List[Tuple[str, float]]:
     out = []
     for drug, factor in self.metabolites:
       out.append((drug, decay_amount * factor))

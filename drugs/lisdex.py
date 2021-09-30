@@ -36,4 +36,4 @@ class Lisdexamphetamine(drug.Drug):
           flood_in.append((45-i)/45)
         self.set_flood_in(flood_in)
         self.flood_in_timedelta = timedelta(minutes=1)
-        self.add_metabolite(Dexamphetamine(), 0.296)
+        self.add_metabolite("Dexamphetamine", 0.296)

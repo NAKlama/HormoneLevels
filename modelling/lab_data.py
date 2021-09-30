@@ -6,9 +6,9 @@ import drugs
 
 class LabData:
   time: datetime
-  labs: Dict[drugs.drug.Drug, float]  # Tuple of value and unit for each drug
+  labs: Dict[str, float]  # Tuple of value and unit for each drug
 
-  def __init__(self, time: datetime, data: Optional[Dict[drugs.drug.Drug, float]] = None):
+  def __init__(self, time: datetime, data: Optional[Dict[str, float]] = None):
     self.time = time
     if data is None:
       self.labs = {}

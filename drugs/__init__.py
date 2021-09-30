@@ -20,3 +20,4 @@ from .estradiol_cypionate import EstradiolCypionate
 from .metylphenidate import Methylphenidate
 from .lisdex import Lisdexamphetamine, Dexamphetamine
 from .drug import Drug
+from .drug_db import drug_db

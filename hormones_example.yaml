@@ -1,0 +1,191 @@
+drugs:
+  ev: "EstradiolValerate"
+
+model:
+  start_date: 2020-12-12
+  timedelta:
+    unit: hours
+    value: 1
+  days_into_future: 90
+  corrected_std_dev: true
+
+graph:
+  y_window: [0, 400]
+  two_std_dev_in_band: true
+  units:
+    unit: days
+    value: 1
+  plots:
+#    - past_days: 14
+#      future_days: 14
+#      title: Two weeks, past and future
+    - past_days: 30
+      future_days: 14
+      title: One month back
+    - past_days: 90
+      future_days: 30
+      title: Three months
+    - past_days: 183
+      future_days: 60
+      title: Half year
+      x_ticks: 28
+#    - start_day: 0
+#      end_day: 30
+#      title: First month
+#    - start_day: 0
+#      end_day: 90
+#      title: First three months
+    - start_day: 0
+      end_day: 183
+      title: First half year
+    - start_day: 21
+      end_day: 133
+      title: Lab values early 2021
+    - start_day: 21
+      end_day: 49
+      title: Lab value pair early 2021
+    - start_day: 119
+      end_day: 133
+      title: Lab value mid 2021
+
+labs:
+  - date: 2021-01-07
+    hour: 12
+    values:
+      ev: 201.0
+  - date: 2021-01-25
+    hour: 12
+    values:
+      ev: 241.6
+  - date: 2021-04-16
+    hour: 12
+    values:
+      ev: 289.0
+
+doses:
+  ev:
+    - { date: 2020-12-12, hour:  9, dose: 2.5 }
+    - { date: 2020-12-13, hour:  9, dose: 2.5 }
+    - { date: 2020-12-15, hour:  9, dose: 2.5 }
+    - { date: 2020-12-18, hour: 11, dose: 2.5 }
+    - { date: 2020-12-21, hour:  9, dose: 2.5 }
+    - { date: 2020-12-23, hour:  9, dose: 2.5 }
+    - { date: 2020-12-26, hour: 15, dose: 2.5 }
+    - { date: 2020-12-29, hour: 11, dose: 2.5 }
+    - { date: 2021-01-01, hour: 12, dose: 2.5 }
+    - { date: 2021-01-04, hour:  9, dose: 2.5 }
+    - { date: 2021-01-07, hour: 12, dose: 2.5 }
+    - { date: 2021-01-09, hour:  9, dose: 2.5 }
+    - { date: 2021-01-12, hour:  9, dose: 2.5 }
+    - { date: 2021-01-15, hour:  9, dose: 2.5 }
+    - { date: 2021-01-18, hour:  9, dose: 3.0 }
+    - { date: 2021-01-21, hour:  9, dose: 2.4 }
+    - { date: 2021-01-24, hour:  9, dose: 2.9 }
+    - { date: 2021-01-27, hour: 10, dose: 2.7 }
+    - { date: 2021-01-30, hour: 10, dose: 3.0 }
+    - { date: 2021-02-01, hour:  9, dose: 2.5 }
+    - { date: 2021-02-03, hour:  8, dose: 2.9 }
+    - { date: 2021-02-06, hour: 12, dose: 2.55 }
+    - { date: 2021-02-09, hour:  9, dose: 2.8 }
+    - { date: 2021-02-12, hour:  8, dose: 2.4 }
+    - { date: 2021-02-15, hour:  8, dose: 2.9 }
+    - { date: 2021-02-18, hour:  9, dose: 2.55 }
+    - { date: 2021-02-21, hour:  9, dose: 3.0 }
+    - { date: 2021-02-24, hour:  9, dose: 2.4 }
+    - { date: 2021-02-27, hour:  9, dose: 2.7 }
+    - { date: 2021-03-01, hour:  9, dose: 2.7 }
+    - { date: 2021-03-03, hour: 10, dose: 2.6 }
+    - { date: 2021-03-06, hour:  9, dose: 2.8 }
+    - { date: 2021-03-09, hour: 12, dose: 2.9 }
+    - { date: 2021-03-12, hour: 13, dose: 2.6 }
+    - { date: 2021-03-15, hour:  9, dose: 2.8 }
+    - { date: 2021-03-18, hour:  9, dose: 2.7 }
+    - { date: 2021-03-21, hour: 20, dose: 2.9 }
+    - { date: 2021-03-24, hour:  9, dose: 2.65 }
+    - { date: 2021-03-27, hour: 12, dose: 2.85 }
+    - { date: 2021-03-30, hour:  9, dose: 2.7 }
+    - { date: 2021-04-01, hour: 10, dose: 2.9 }
+    - { date: 2021-04-03, hour: 12, dose: 2.7 }
+    - { date: 2021-04-06, hour:  9, dose: 2.85 }
+    - { date: 2021-04-09, hour: 12, dose: 2.6 }
+    - { date: 2021-04-12, hour:  9, dose: 2.8 }
+    - { date: 2021-04-15, hour:  9, dose: 2.6 }
+    - { date: 2021-04-18, hour:  9, dose: 2.85 }
+    - { date: 2021-04-21, hour: 16, dose: 2.65 }
+    - { date: 2021-04-24, hour: 10, dose: 2.85 }
+    - { date: 2021-04-27, hour: 17, dose: 2.7 }
+    - { date: 2021-04-30, hour: 10, dose: 2.85 }
+    - { date: 2021-05-03, hour: 14, dose: 2.7 }
+    - { date: 2021-05-06, hour:  9, dose: 2.75 }
+    - { date: 2021-05-09, hour: 11, dose: 2.7 }
+    - { date: 2021-05-12, hour: 13, dose: 2.85 }
+    - { date: 2021-05-15, hour: 15, dose: 2.75 }
+    - { date: 2021-05-18, hour: 12, dose: 2.9 }
+    - { date: 2021-05-21, hour:  9, dose: 2.6 }
+    - { date: 2021-05-24, hour: 13, dose: 2.85 }
+    - { date: 2021-05-27, hour: 13, dose: 2.65 }
+    - { date: 2021-05-30, hour: 13, dose: 2.85 }
+    - { date: 2021-06-03, hour:  9, dose: 2.65 }
+    - { date: 2021-06-06, hour: 12, dose: 3.0 }
+    - { date: 2021-06-09, hour:  7, dose: 2.65 }
+    - { date: 2021-06-12, hour:  8, dose: 2.85 }
+    - { date: 2021-06-15, hour:  9, dose: 2.65 }
+    - { date: 2021-06-18, hour:  9, dose: 2.95 }
+    - { date: 2021-06-21, hour:  9, dose: 2.65 }
+    - { date: 2021-06-24, hour: 10, dose: 2.85 }
+    - { date: 2021-06-27, hour: 10, dose: 2.6 }
+    - { date: 2021-06-30, hour:  9, dose: 2.95 }
+    - { date: 2021-07-03, hour:  9, dose: 2.7 }
+    - { date: 2021-07-06, hour:  7, dose: 2.9 }
+    - { date: 2021-07-09, hour:  9, dose: 2.65 }
+    - { date: 2021-07-12, hour: 10, dose: 2.95 }
+    - { date: 2021-07-15, hour:  8, dose: 2.65 }
+    - { date: 2021-07-18, hour: 12, dose: 2.6 }
+    - { date: 2021-07-21, hour: 10, dose: 3.05 }
+    - { date: 2021-07-24, hour: 13, dose: 2.9 }
+    - { date: 2021-07-27, hour: 13, dose: 2.6 }
+    - { date: 2021-07-30, hour: 15, dose: 2.85 }
+    - { date: 2021-08-03, hour: 14, dose: 2.55 }
+    - { date: 2021-08-06, hour: 16, dose: 2.9 }
+    - { date: 2021-08-09, hour: 13, dose: 2.6 }
+    - { date: 2021-08-12, hour: 12, dose: 2.8 }
+    - { date: 2021-08-15, hour: 11, dose: 2.7 }
+    - { date: 2021-08-18, hour: 11, dose: 2.85 }
+    - { date: 2021-08-21, hour:  8, dose: 2.65 }
+    - { date: 2021-08-24, hour:  9, dose: 3.0 }
+    - { date: 2021-08-27, hour: 12, dose: 2.65 }
+    - { date: 2021-08-30, hour: 15, dose: 2.95 }
+    - { date: 2021-09-03, hour: 15, dose: 2.65 }
+    - { date: 2021-09-06, hour:  9, dose: 2.8 }
+    - { date: 2021-09-09, hour: 17, dose: 2.75 }
+    - { date: 2021-09-12, hour: 23, dose: 2.8 }
+    - { date: 2021-09-15, hour:  8, dose: 2.65 }
+    - { date: 2021-09-18, hour: 18, dose: 2.8 }
+    - { date: 2021-09-21, hour:  8, dose: 2.7 }
+    - { date: 2021-09-24, hour: 21, dose: 2.7 }
+    - { date: 2021-09-27, hour: 11, dose: 2.75 }
+
+    - { date: 2021-09-30, hour:  9, dose: 2.9 }
+    - { date: 2021-10-03, hour: 12, dose: 2.7 }
+
+    - { date: 2021-10-06, hour:  9, dose: 2.5 }
+    - { date: 2021-10-09, hour:  9, dose: 2.5 }
+    - { date: 2021-10-12, hour:  9, dose: 2.5 }
+    - { date: 2021-10-15, hour:  9, dose: 2.5 }
+    - { date: 2021-10-18, hour:  9, dose: 2.5 }
+    - { date: 2021-10-21, hour:  9, dose: 2.5 }
+    - { date: 2021-10-24, hour:  9, dose: 2.5 }
+    - { date: 2021-10-27, hour:  9, dose: 2.5 }
+    - { date: 2021-10-30, hour:  9, dose: 2.5 }
+
+    - { date: 2021-11-03, hour:  9, dose: 2.5 }
+    - { date: 2021-11-06, hour:  9, dose: 2.5 }
+    - { date: 2021-11-09, hour:  9, dose: 2.5 }
+    - { date: 2021-11-12, hour:  9, dose: 2.5 }
+    - { date: 2021-11-15, hour:  9, dose: 2.5 }
+    - { date: 2021-11-18, hour:  9, dose: 2.5 }
+    - { date: 2021-11-21, hour:  9, dose: 2.5 }
+    - { date: 2021-11-24, hour:  9, dose: 2.5 }
+    - { date: 2021-11-27, hour:  9, dose: 2.5 }
+    - { date: 2021-11-30, hour:  9, dose: 2.5 }
+

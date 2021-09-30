@@ -26,6 +26,7 @@ setup(
   install_requires=[
     'funcy',
     'matplotlib',
-    'numpy'
+    'numpy',
+    'PyYAML',
   ],
 )

@@ -26,23 +26,31 @@ from datetime import datetime, date, timedelta, time
 from funcy import take, map, count, drop
 
 from modelling.lab_data import LabData
+from graphing.color_list import get_color
+
+
+plot_data_type = Union[Tuple[np.ndarray, np.ndarray, np.ndarray],
+                       Tuple[np.ndarray, np.ndarray, np.ndarray, str]]
 
 
 class BodyModel:
   starting_date: date
   step: timedelta
-  doses_list: Dict[Drug, List[Dose]]
+  drugs: Dict[str, Drug]
+  doses_list: Dict[str, List[Dose]]
   labs_list: List[LabData]
-  blood_level_factors: Dict[Drug, Tuple[float, float]]
-  lab_levels: Dict[Drug, List[Tuple[datetime, float]]]
-  drugs_timeline: Dict[Drug, List[float]]
+  blood_level_factors: Dict[str, Tuple[float, float]]
+  lab_levels: Dict[str, List[Tuple[datetime, float]]]
+  drugs_timeline: Dict[str, List[float]]
   duration: int
   real_duration: int
-  doses_count: int
-  doses_amount: float
+  doses_count: Dict[str, int]
+  doses_amount: Dict[str, float]
 
   def __init__(self, starting_date: date, time_steps: timedelta):
     self.starting_date = starting_date
+    self.drugs = {}
+    self.drugs_by_name = {}
     self.step = time_steps
     self.doses_list = {}
     self.drugs_timeline = {}
@@ -51,24 +59,32 @@ class BodyModel:
     self.lab_levels = {}
     self.duration = 0
     self.real_duration = 0
-    self.doses_count = 0
-    self.doses_amount = 0.0
+    self.doses_count = {}
+    self.doses_amount = {}
 
   @staticmethod
   def delta_to_hours(td: timedelta) -> int:
     return math.ceil(td.total_seconds() / 3600.0)
 
-  def add_dose(self, drug: Drug, amount: float, time_in: datetime):
-    dose = Dose(drug, amount, time_in)
+  def add_drugs(self, drug_name: str, drug: Drug):
+    self.drugs[drug_name] = drug
+    self.drugs_by_name[drug.name] = drug_name
+
+  def add_dose(self, drug: str, amount: float, time_in: datetime):
+    dose = Dose(self.drugs[drug], amount, time_in)
     if dose.time < datetime.combine(self.starting_date, time()):
       raise Exception("Doses cannot be before starting date")
-    if dose.drug not in self.doses_list:
-      self.doses_list[dose.drug] = []
+    if drug not in self.doses_list:
+      self.doses_list[drug] = []
     for d in dose.get_partial_doses():
-      self.doses_list[dose.drug].append(d)
-    self.doses_list[dose.drug].sort(key=lambda x: x.time)
-    self.doses_count += 1
-    self.doses_amount += amount
+      self.doses_list[drug].append(d)
+    self.doses_list[drug].sort(key=lambda x: x.time)
+    if drug not in self.doses_count:
+      self.doses_count[drug] = 0
+    if drug not in self.doses_amount:
+      self.doses_amount[drug] = 0.0
+    self.doses_count[drug] += 1
+    self.doses_amount[drug] += amount
 
   def add_lab_data(self, data_in: Union[LabData, List[LabData]]):
     if type(data_in) is type(LabData):
@@ -84,7 +100,7 @@ class BodyModel:
       start_len = len(drugs)
       new_drugs = []
       for d in drugs:
-        for m, x in d.metabolites:
+        for m, x in self.drugs[d].metabolites:
           new_drugs.append(m)
       for d in new_drugs:
         drugs.add(d)
@@ -99,13 +115,14 @@ class BodyModel:
       for d in drugs:
         if t > 0:
           last_val = self.drugs_timeline[d][-1]
-          curr_val = last_val * d.get_metabolism_factor(self.step)
+          curr_val = last_val * self.drugs[d].get_metabolism_factor(self.step)
           self.drugs_timeline[d].append(curr_val)
-          metabolites = d.get_metabolites(last_val - curr_val)
+          metabolites = self.drugs[d].get_metabolites(last_val - curr_val)
           for drug, amount in metabolites:
             if drug not in self.doses_list:
               self.doses_list[drug] = []
-            self.doses_list[drug].insert(0, Dose(drug, amount, time_t, True))
+            self.doses_list[drug].insert(0, Dose(self.drugs[self.drugs_by_name[drug]],
+                                                 amount, time_t, True))
         else:
           self.drugs_timeline[d].append(0.0)
         while d in self.doses_list and \
@@ -120,18 +137,18 @@ class BodyModel:
     return math.floor((timepoint - datetime.combine(self.starting_date,
                                                     time())).total_seconds() / self.step.total_seconds())
 
-  def get_drug_at_timepoint(self, d: Drug, t: datetime) -> float:
+  def get_drug_at_timepoint(self, d: str, t: datetime) -> float:
     return self.drugs_timeline[d][self.__get_timepoint(t)]
 
-  def get_blood_level_at_timepoint(self, d: Drug, t: datetime) -> Tuple[float, float, float]:
+  def get_blood_level_at_timepoint(self, d: str, t: datetime) -> Tuple[float, float, float]:
     timeline    = self.drugs_timeline[d]
     timepoint   = self.__get_timepoint(t)
     avg, stddev = self.blood_level_factors[d]
     return timeline[timepoint], avg, stddev
 
-  def get_current_blood_level_message(self, d: Drug) -> str:
+  def get_current_blood_level_message(self, d: str) -> str:
     drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
-    return f"Estimated blood level ({d.name_blood}): " \
+    return f"Estimated blood level ({self.drugs[d].name_blood}): " \
            f"{drug_amount * factor_avg:6.2f} ± " \
            f"{factor_stddev * 2:5.2f} ng/l (P<.046)"
 
@@ -162,34 +179,37 @@ class BodyModel:
                     plot_delta: timedelta = timedelta(days=1),
                     adjusted: bool = False,
                     stddev_multiplier: float = 1.0,
-                    offset: float = 0.0) -> \
-          Tuple[np.ndarray, Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
+                    offset: float = 0.0,
+                    color: bool = False) -> \
+          Tuple[np.ndarray, Dict[str, plot_data_type]]:
     t_arr = np.array(list(take(self.duration,
                                map(lambda x:
                                    x * (self.step.total_seconds()/plot_delta.total_seconds()) + offset,
                                    count()))))
     # print(f't_arr.size()={len(t_arr)}')
     out = {}
-    drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: x.name)
-    for drug in drugs:
+    drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: self.drugs[x].name)
+    for n, drug in enumerate(drugs):
       timeline = self.drugs_timeline[drug]
       if adjusted:
-        out[drug.name_blood] = (
-          np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline))),
-          np.array(list(map(
-            lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * stddev_multiplier,
-            timeline))),
-          np.array(list(map(
-            lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * stddev_multiplier,
-            timeline))),
-        )
+        arr_avg = np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline)))
+        arr_min = np.array(list(map(
+              lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * stddev_multiplier,
+              timeline)))
+        arr_max = np.array(list(map(
+              lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * stddev_multiplier,
+              timeline)))
+        if color:
+          out[self.drugs[drug].name_blood] = (arr_avg, arr_min, arr_max, get_color(n))
+        else:
+          out[self.drugs[drug].name_blood] = (arr_avg, arr_min, arr_max)
       else:
         arr = np.array(timeline)
-        out[drug.name_blood] = (arr, arr, arr)
+        out[self.drugs[drug].name_blood] = (arr, arr, arr)
       # print(f't_arr.size({drug.name})={len(out[drug.name])}')
     return t_arr, out
 
-  def get_statistical_data(self, drug: Drug) -> Tuple[float, float]:
+  def get_statistical_data(self, drug: str) -> Tuple[float, float]:
     blood_levels   = list(drop(7*24,
                                take(self.real_duration,
                                     map(lambda x: x * self.blood_level_factors[drug][0],
@@ -202,10 +222,9 @@ class BodyModel:
   def get_plot_lab_levels(self) -> Dict[str, Tuple[List[int], List[float]]]:
     lab_levels = {}
     for drug, ll_data in self.lab_levels.items():
-      lab_levels[drug.name] = (
+      lab_levels[self.drugs[drug].name_blood] = (
         list(map(lambda x: (
           ((x[0] - datetime.combine(self.starting_date, time())).total_seconds() / (3600 * 24))), ll_data)),
         list(map(lambda x: x[1], ll_data))
       )
-
     return lab_levels
