@@ -29,6 +29,7 @@ class Drug(object):
   flood_in_timedelta:     timedelta
   blood_value_factor:     float
   metabolites:            List[Tuple[str, float]]
+  factor:                 float
 
   def __init__(self, name: str, half_life: timedelta, drug_class: Optional[DrugClass] = None):
     self.name               = name
@@ -38,6 +39,7 @@ class Drug(object):
     self.flood_in           = None
     self.flood_in_timedelta = timedelta(hours=1)
     self.metabolites        = []
+    self.factor             = 1.0
 
   def set_flood_in(self, flood_in: List[float]):
     self.flood_in = flood_in

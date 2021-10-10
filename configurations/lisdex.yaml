@@ -1,0 +1,39 @@
+drugs:
+  lisdex: "Lisdexamphetamine"
+  amph:   "Dexamphetamine"
+
+model:
+  start_date: 2020-01-01
+  timedelta:
+    unit: minutes
+    value: 5
+  days_into_future: 0
+
+graph:
+  y_window: [ 0, 30 ]
+  two_std_dev_in_band: true
+  units:
+    unit: hours
+    value: 1
+  deactivate_full_plot: true
+  confidence: false
+  x_label: Time (h)
+  x_offset: -168
+  plots:
+    - start_day: 0
+      end_day: 24
+      title: Lisdex on day 8
+      x_ticks: 6
+
+doses:
+  lisdex:
+    - { date: 2020-01-01, time: "00:00:00", dose: 50,
+        repeat: {count: 8, unit: day, value: 1}}
+#    - { date: 2020-01-02, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-03, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-04, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-05, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-06, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-07, time: "00:00:00", dose: 50 }
+#    - { date: 2020-01-08, time: "00:00:00", dose: 50 }
+

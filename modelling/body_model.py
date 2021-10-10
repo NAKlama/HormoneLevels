@@ -16,7 +16,7 @@
 
 
 import math
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Optional
 
 import numpy as np
 
@@ -69,6 +69,8 @@ class BodyModel:
   def add_drugs(self, drug_name: str, drug: Drug):
     self.drugs[drug_name] = drug
     self.drugs_by_name[drug.name] = drug_name
+    self.doses_amount[drug_name]  = 0
+    self.doses_count[drug_name]   = 0
 
   def add_dose(self, drug: str, amount: float, time_in: datetime):
     dose = Dose(self.drugs[drug], amount, time_in)
@@ -100,8 +102,8 @@ class BodyModel:
       start_len = len(drugs)
       new_drugs = []
       for d in drugs:
-        for m, x in self.drugs[d].metabolites:
-          new_drugs.append(m)
+        for m, _ in self.drugs[d].metabolites:
+          new_drugs.append(self.drugs_by_name[m])
       for d in new_drugs:
         drugs.add(d)
       if len(drugs) == start_len:
@@ -120,8 +122,8 @@ class BodyModel:
           metabolites = self.drugs[d].get_metabolites(last_val - curr_val)
           for drug, amount in metabolites:
             if drug not in self.doses_list:
-              self.doses_list[drug] = []
-            self.doses_list[drug].insert(0, Dose(self.drugs[self.drugs_by_name[drug]],
+              self.doses_list[self.drugs_by_name[drug]] = []
+            self.doses_list[self.drugs_by_name[drug]].insert(0, Dose(self.drugs[self.drugs_by_name[drug]],
                                                  amount, time_t, True))
         else:
           self.drugs_timeline[d].append(0.0)
@@ -143,14 +145,21 @@ class BodyModel:
   def get_blood_level_at_timepoint(self, d: str, t: datetime) -> Tuple[float, float, float]:
     timeline    = self.drugs_timeline[d]
     timepoint   = self.__get_timepoint(t)
-    avg, stddev = self.blood_level_factors[d]
+    if d in self.blood_level_factors:
+      avg, stddev = self.blood_level_factors[d]
+    else:
+      avg    = timeline[timepoint]
+      stddev = timeline[timepoint]
     return timeline[timepoint], avg, stddev
 
-  def get_current_blood_level_message(self, d: str) -> str:
-    drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
-    return f"Estimated blood level ({self.drugs[d].name_blood}): " \
-           f"{drug_amount * factor_avg:6.2f} ± " \
-           f"{factor_stddev * 2:5.2f} ng/l (P<.046)"
+  def get_current_blood_level_message(self, d: str) -> Optional[str]:
+    if d in self.lab_levels:
+      drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
+      return f"Estimated blood level ({self.drugs[d].name_blood}): " \
+             f"{drug_amount * factor_avg:6.2f} ± " \
+             f"{factor_stddev * 2:5.2f} ng/l (P<.046)" \
+             f"     -     factor: {factor_avg:6.1f}"
+    return None
 
   def estimate_blood_levels(self, corrected_std_dev: bool = True):
     for lab_data in self.labs_list:
@@ -163,17 +172,18 @@ class BodyModel:
 
     drugs = set(self.lab_levels.keys())
     for d in drugs:
-      level_matcher = list(map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])), self.lab_levels[d]))
-      estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
-      average_est = sum(map(lambda x: x / len(estimates), estimates))
-      levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
-      if len(estimates) > 1 and corrected_std_dev:
-        std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
-        # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
-      else:
-        std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
-        # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
-      self.blood_level_factors[d] = (average_est, std_dev)
+      if d in self.lab_levels:
+        level_matcher = list(map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])), self.lab_levels[d]))
+        estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
+        average_est = sum(map(lambda x: x / len(estimates), estimates))
+        levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
+        if len(estimates) > 1 and corrected_std_dev:
+          std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
+          # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
+        else:
+          std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
+          # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
+        self.blood_level_factors[d] = (average_est, std_dev)
 
   def get_plot_data(self,
                     plot_delta: timedelta = timedelta(days=1),
@@ -189,9 +199,15 @@ class BodyModel:
     # print(f't_arr.size()={len(t_arr)}')
     out = {}
     drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: self.drugs[x].name)
+
     for n, drug in enumerate(drugs):
+      # print(f"{n}: {drug}")
       timeline = self.drugs_timeline[drug]
-      if adjusted:
+      drug_name = self.drugs[drug].name_blood
+      if self.drugs[drug].factor != 1.0:
+        drug_name += f" (x{self.drugs[drug].factor})"
+
+      if adjusted and drug in self.blood_level_factors and len(self.blood_level_factors[drug]) > 0:
         arr_avg = np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline)))
         arr_min = np.array(list(map(
               lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * stddev_multiplier,
@@ -200,16 +216,24 @@ class BodyModel:
               lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * stddev_multiplier,
               timeline)))
         if color:
-          out[self.drugs[drug].name_blood] = (arr_avg, arr_min, arr_max, get_color(n))
+          # print(f"{drug}: {n} => {get_color(n)}")
+          out[drug_name] = (arr_avg, arr_min, arr_max, get_color(n))
         else:
-          out[self.drugs[drug].name_blood] = (arr_avg, arr_min, arr_max)
+          out[drug_name] = (arr_avg, arr_min, arr_max)
       else:
-        arr = np.array(timeline)
-        out[self.drugs[drug].name_blood] = (arr, arr, arr)
+        arr = np.array(timeline) * self.drugs[drug].factor
+        if color:
+          out[drug_name] = (arr, arr, arr, get_color(n))
+        else:
+          out[drug_name] = (arr, arr, arr)
       # print(f't_arr.size({drug.name})={len(out[drug.name])}')
     return t_arr, out
 
-  def get_statistical_data(self, drug: str) -> Tuple[float, float]:
+  def get_statistical_data(self, drug: str) -> Optional[Tuple[float, float]]:
+    # print(list(self.blood_level_factors.keys()))
+    # print(drug)
+    if drug not in self.blood_level_factors:
+      return None
     blood_levels   = list(drop(7*24,
                                take(self.real_duration,
                                     map(lambda x: x * self.blood_level_factors[drug][0],

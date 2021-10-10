@@ -13,8 +13,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+import sys
 from typing import Optional, Tuple, Dict, List, Union
+
+import funcy
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -34,7 +36,19 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                title:           Optional[str] = None,
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
                confidence_val:  Optional[float] = None,
-               avg_levels:       Optional[Dict[str, Tuple[float, float, str]]] = None):
+               avg_levels:      Optional[Dict[str, Tuple[float, float, str]]] = None,
+               plot_markers:    bool = False):
+  # split_off_smaller = funcy.lsplit_by(lambda x: x < x_window[0], data[0])
+  # smaller_count     = len(funcy.first(split_off_smaller))
+  # split_off_bigger  = funcy.lsplit_by(lambda x: x > x_window[1], funcy.second(split_off_smaller))
+  # new_t             = funcy.first(split_off_bigger)
+  # data_count        = len(new_t)
+  # new_data_dict     = {}
+  # for k, d_tuple in data[1].items():
+  #   new_data_dict[k] = (np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[0]))),
+  #                       np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[1]))),
+  #                       np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[2]))))
+  # data = (new_t, new_data_dict)
   plt.figure(dpi=800)
   if title is not None:
     plt.title(title)
@@ -52,11 +66,25 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
       value, minimum, maximum, color = drug_plot
     else:
       value, minimum, maximum = drug_plot
-    if color is not None:
-      plt.plot(d_t, value, label=f'{name}', color=color, zorder=4)
+    # print(type(value))
+    # print(type(minimum))
+    # print(type(maximum))
+    sys.stdout.flush()
+    if sum(value - minimum) == 0:
+      plot_cofidence = False
     else:
-      plt.plot(d_t, value, label=f'{name}', zorder=4)
-    if confidence_val is not None:
+      plot_cofidence = True
+    if color is not None:
+      if plot_markers:
+        plt.plot(d_t, value, marker=".", linestyle="-", label=f'{name}', color=color, zorder=4)
+      else:
+        plt.plot(d_t, value, label=f'{name}', color=color, zorder=4)
+    else:
+      if plot_markers:
+        plt.plot(d_t, value, marker=".", linestyle="-", label=f'{name}', zorder=4)
+      else:
+        plt.plot(d_t, value, label=f'{name}', zorder=4)
+    if confidence_val is not None and plot_cofidence:
       if color is not None:
         plt.fill_between(d_t, minimum, maximum, label=f'{name} {confidence_val}% confidence interval',
                          alpha=0.5, color=color, zorder=3)
@@ -76,6 +104,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
   if y_window is not None:
     plt.ylim(bottom=y_window[0], top=y_window[1])
   plt.grid()
+  plt.axhline(y=0.0, color='k', zorder=0)
   if now is not None:
     plt.axvline(now)
   if x_label is None:

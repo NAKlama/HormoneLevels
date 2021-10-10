@@ -14,17 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 import drugs.drug as drug
 from datetime import timedelta
-# from drugs import Estradiol
 
 
-class EstradiolValerate(drug.Drug):
+class CyproteroneAcetate(drug.Drug):
   def __init__(self):
-    super().__init__("Estradiol valerate", timedelta(days=4, hours=12))
-    self.set_flood_in([1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-                       7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, .5, .5])
-    self.flood_in_timedelta = timedelta(hours=1)
-    self.add_metabolite("Estradiol", (272.38 / 356.506))
-    # self.name_blood = "Estradiol[EV]"
+    half_life = timedelta(days=3, hours=12)
+    super().__init__("Cyproterone Acetate", half_life)

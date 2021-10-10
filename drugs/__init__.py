@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # from .estradiol import Estradiol
+from .estradiol import Estradiol
 from .estradiol_valerate import EstradiolValerate
 from .estradiol_cypionate import EstradiolCypionate
 from .metylphenidate import Methylphenidate
