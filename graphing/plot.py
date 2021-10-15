@@ -18,6 +18,7 @@ from typing import Optional, Tuple, Dict, List, Union
 
 import funcy
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 
 
@@ -37,19 +38,16 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
                confidence_val:  Optional[float] = None,
                avg_levels:      Optional[Dict[str, Tuple[float, float, str]]] = None,
-               plot_markers:    bool = False):
-  # split_off_smaller = funcy.lsplit_by(lambda x: x < x_window[0], data[0])
-  # smaller_count     = len(funcy.first(split_off_smaller))
-  # split_off_bigger  = funcy.lsplit_by(lambda x: x > x_window[1], funcy.second(split_off_smaller))
-  # new_t             = funcy.first(split_off_bigger)
-  # data_count        = len(new_t)
-  # new_data_dict     = {}
-  # for k, d_tuple in data[1].items():
-  #   new_data_dict[k] = (np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[0]))),
-  #                       np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[1]))),
-  #                       np.ndarray(funcy.take(data_count, funcy.drop(smaller_count, d_tuple[2]))))
-  # data = (new_t, new_data_dict)
-  plt.figure(dpi=800)
+               plot_markers:    bool = False,
+               no_avg_label:    bool = True,
+               plot_dates:      bool = False):
+  plt.figure(dpi=800, tight_layout=True)
+  plt.rc('xtick', labelsize=6)
+  plt.rc('ytick', labelsize=6)
+  plt.rc('legend', fontsize=6)
+  plt.rc('axes', labelsize=6, titlesize=10)
+  plt.rc('figure', titlesize=10)
+  plt.margins(x=0)
   if title is not None:
     plt.title(title)
   d_t, drugs = data
@@ -57,7 +55,18 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
     for name, avg_level in avg_levels.items():
       avg, std_dev, color = avg_level
       avg_line = np.array([avg for _ in range(len(d_t))])
-      plt.plot(d_t, avg_line, label=f'{name} average value', color=color, zorder=1)
+      label = f'{name} average value'
+      if no_avg_label:
+        label = "_nolegend_"
+      if plot_dates:
+        plt.plot_date(d_t, avg_line,
+                      label=label,
+                      color=color,
+                      linestyle="-",
+                      markersize=0,
+                      zorder=1)
+      else:
+        plt.plot(d_t, avg_line, label=label, color=color, zorder=1)
       plt.axhspan(avg - std_dev, avg + std_dev, facecolor=color, alpha=0.3, zorder=2)
       plt.axhspan(avg - 2*std_dev, avg + 2*std_dev, facecolor=color, alpha=0.2, zorder=2)
   for name, drug_plot in drugs.items():
@@ -76,14 +85,53 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
       plot_cofidence = True
     if color is not None:
       if plot_markers:
-        plt.plot(d_t, value, marker=".", linestyle="-", label=f'{name}', color=color, zorder=4)
+        if plot_dates:
+          plt.plot_date(d_t, value,
+                        marker=".",
+                        linestyle="-",
+                        label=f'{name}',
+                        color=color,
+                        zorder=4)
+        else:
+          plt.plot(d_t, value,
+                   marker=".",
+                   linestyle="-",
+                   label=f'{name}',
+                   color=color,
+                   zorder=4)
       else:
-        plt.plot(d_t, value, label=f'{name}', color=color, zorder=4)
+        if plot_dates:
+          plt.plot_date(d_t, value,
+                        label=f'{name}',
+                        linestyle="-",
+                        markersize=0,
+                        color=color,
+                        zorder=4)
+        else:
+          plt.plot(d_t, value,
+                   label=f'{name}',
+                   color=color,
+                   zorder=4)
     else:
       if plot_markers:
-        plt.plot(d_t, value, marker=".", linestyle="-", label=f'{name}', zorder=4)
+        if plot_dates:
+          plt.plot_date(d_t, value,
+                        marker=".",
+                        linestyle="-",
+                        linewidth=2,
+                        label=f'{name}',
+                        zorder=4)
+        else:
+          plt.plot(d_t, value,
+                   marker=".",
+                   linestyle="-",
+                   label=f'{name}',
+                   zorder=4)
       else:
-        plt.plot(d_t, value, label=f'{name}', zorder=4)
+        if plot_dates:
+          plt.plot_date(d_t, value, label=f'{name}', zorder=4, linewidth=2)
+        else:
+          plt.plot(d_t, value, label=f'{name}', zorder=4)
     if confidence_val is not None and plot_cofidence:
       if color is not None:
         plt.fill_between(d_t, minimum, maximum, label=f'{name} {confidence_val}% confidence interval',
@@ -100,13 +148,22 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                     marker='.', zorder=5)
   if x_window is not None:
     plt.xlim(left=x_window[0], right=x_window[1])
-    plt.xticks(range(int(x_window[0]), int(x_window[1]) + 1, x_ticks))
+    if plot_dates:
+      # x_axis = axis.get_xaxis()
+      axis = plt.gca()
+      axis.xaxis.axis_date()
+      axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+      axis.xaxis.set_major_locator(mdates.AutoDateLocator())
+      plt.gcf().autofmt_xdate()
+    else:
+      plt.xticks(range(int(x_window[0]), int(x_window[1]) + 1, x_ticks))
+
   if y_window is not None:
     plt.ylim(bottom=y_window[0], top=y_window[1])
   plt.grid()
   plt.axhline(y=0.0, color='k', zorder=0)
   if now is not None:
-    plt.axvline(now)
+    plt.axvline(now, color="green")
   if x_label is None:
     plt.xlabel("Time (days)")
   else:

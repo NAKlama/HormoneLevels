@@ -18,6 +18,7 @@
 import math
 from typing import List, Dict, Tuple, Union, Optional
 
+import funcy
 import numpy as np
 
 from drugs.drug import Drug
@@ -39,13 +40,16 @@ class BodyModel:
   drugs: Dict[str, Drug]
   doses_list: Dict[str, List[Dose]]
   labs_list: List[LabData]
-  blood_level_factors: Dict[str, Tuple[float, float]]
+  blood_level_factors: Dict[str, List[Tuple[float, float]]]
+  factors_timeline: Dict[str, List[Tuple[float, float]]]
   lab_levels: Dict[str, List[Tuple[datetime, float]]]
+  lab_events: Dict[str, List[List[Tuple[datetime, float]]]]
   drugs_timeline: Dict[str, List[float]]
   duration: int
   real_duration: int
   doses_count: Dict[str, int]
   doses_amount: Dict[str, float]
+  events: List[Tuple[date, timedelta]]
 
   def __init__(self, starting_date: date, time_steps: timedelta):
     self.starting_date = starting_date
@@ -56,11 +60,14 @@ class BodyModel:
     self.drugs_timeline = {}
     self.blood_level_factors = {}
     self.labs_list = []
+    self.factor_timeline = {}
     self.lab_levels = {}
+    self.lab_events = {}
     self.duration = 0
     self.real_duration = 0
     self.doses_count = {}
     self.doses_amount = {}
+    self.events = []
 
   @staticmethod
   def delta_to_hours(td: timedelta) -> int:
@@ -71,6 +78,10 @@ class BodyModel:
     self.drugs_by_name[drug.name] = drug_name
     self.doses_amount[drug_name]  = 0
     self.doses_count[drug_name]   = 0
+
+  def add_event(self, when: date, how_long: timedelta):
+    self.events.append((when, how_long))
+    self.events.sort(key=lambda x: x[0])
 
   def add_dose(self, drug: str, amount: float, time_in: datetime):
     dose = Dose(self.drugs[drug], amount, time_in)
@@ -145,8 +156,50 @@ class BodyModel:
   def get_blood_level_at_timepoint(self, d: str, t: datetime) -> Tuple[float, float, float]:
     timeline    = self.drugs_timeline[d]
     timepoint   = self.__get_timepoint(t)
+    avg = 0.0
+    stddev = 0.0
     if d in self.blood_level_factors:
-      avg, stddev = self.blood_level_factors[d]
+      if len(self.events) > 0:
+        events_max = len(self.events)-1
+        ev_num = 0
+        if len(self.events) > 0:
+          if len(self.blood_level_factors[d]) > ev_num + 1:
+            e_date, e_duration = self.events[ev_num]
+            e_date = datetime.combine(e_date, time())
+            if e_date+e_duration > t > e_date:
+              factor = (t - e_date) / e_duration
+              avg_0, stddev_0 = self.blood_level_factors[d][ev_num]
+              avg_1, stddev_1 = self.blood_level_factors[d][ev_num+1]
+              avg    = avg_1 * factor    + avg_0    + (1-factor)
+              stddev = stddev_1 * factor + stddev_0 + (1-factor)
+              return timeline[timepoint], avg, stddev
+            elif e_date + e_duration <= t:
+              ev_num += 1
+              return timeline[timepoint], self.blood_level_factors[d][ev_num][0], self.blood_level_factors[d][ev_num][1]
+            else:
+              return timeline[timepoint], self.blood_level_factors[d][ev_num][0], self.blood_level_factors[d][ev_num][1]
+          else:
+            return timeline[timepoint], self.blood_level_factors[d][ev_num][0], self.blood_level_factors[d][ev_num][1]
+        else:
+          return timeline[timepoint], self.blood_level_factors[d][0][0], self.blood_level_factors[d][0][1]
+        # for n, event in enumerate(self.events):
+        #   e_date, e_duration = event
+        #   e_date = datetime.combine(e_date, time())
+        #   if e_date < t < e_date+e_duration:
+        #     avg_0, stddev_0 = self.blood_level_factors[d][n]
+        #     avg_1, stddev_1 = self.blood_level_factors[d][n+1]
+        #     factor = (t - datetime.combine(e_date, time())) / e_duration
+        #     avg    = avg_1    * factor + avg_0    * (1-factor)
+        #     stddev = stddev_1 * factor + stddev_0 * (1-factor)
+        #     break
+        #   elif e_date >= t and n == events_max:
+        #     avg, stddev = self.blood_level_factors[d][n + 1]
+        #   elif e_date < t and n == 0:
+        #     avg, stddev = self.blood_level_factors[d][0]
+        #     break
+        #
+      else:
+        avg, stddev = self.blood_level_factors[d][0]
     else:
       avg    = timeline[timepoint]
       stddev = timeline[timepoint]
@@ -162,40 +215,68 @@ class BodyModel:
     return None
 
   def estimate_blood_levels(self, corrected_std_dev: bool = True):
+    self.lab_events = {}
     for lab_data in self.labs_list:
       for d in lab_data.labs.keys():
         self.lab_levels[d] = []
+        self.lab_events[d] = []
 
     for lab_data in self.labs_list:
       for d, val in lab_data.labs.items():
         self.lab_levels[d].append((lab_data.time, val))
+        if len(self.events) > 0:
+          for x in range(len(self.events)+1):
+            self.lab_events[d].append([])
+          for n, event in enumerate(self.events):
+            if n == 0 and lab_data.time < datetime.combine(event[0], time()):
+              self.lab_events[d][0].append((lab_data.time, val))
+              break
+            if lab_data.time > datetime.combine(event[0], time()):
+              self.lab_events[d][n+1].append((lab_data.time, val))
+              break
+        else:
+          if len(self.lab_events[d]) == 0:
+            self.lab_events[d].append([])
+          self.lab_events[d][0].append((lab_data.time, val))
 
     drugs = set(self.lab_levels.keys())
     for d in drugs:
       if d in self.lab_levels:
-        level_matcher = list(map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])), self.lab_levels[d]))
-        estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
-        average_est = sum(map(lambda x: x / len(estimates), estimates))
-        levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
-        if len(estimates) > 1 and corrected_std_dev:
-          std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
-          # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
-        else:
-          std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
-          # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
-        self.blood_level_factors[d] = (average_est, std_dev)
+        if d not in self.blood_level_factors:
+          self.blood_level_factors[d] = []
+          for _ in range(len(self.events) + 1):
+            self.blood_level_factors[d].append((0.0, 0.0))
+
+        for event_num in range(len(self.events)+1):
+          level_matcher = list(map(lambda x: (x[1], self.get_drug_at_timepoint(d, x[0])),
+                                   self.lab_events[d][event_num]))
+          estimates = list(map(lambda x: (x[0] / x[1]), level_matcher))
+          average_est = sum(map(lambda x: x / len(estimates), estimates))
+          levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
+          if len(estimates) > 1 and corrected_std_dev:
+            std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
+            # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
+          else:
+            std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
+            # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / len(estimates))
+
+          self.blood_level_factors[d][event_num] = (average_est, std_dev)
 
   def get_plot_data(self,
                     plot_delta: timedelta = timedelta(days=1),
                     adjusted: bool = False,
                     stddev_multiplier: float = 1.0,
                     offset: float = 0.0,
-                    color: bool = False) -> \
+                    color: bool = False,
+                    use_x_date: bool = False) -> \
           Tuple[np.ndarray, Dict[str, plot_data_type]]:
-    t_arr = np.array(list(take(self.duration,
-                               map(lambda x:
-                                   x * (self.step.total_seconds()/plot_delta.total_seconds()) + offset,
-                                   count()))))
+    t_arr = take(self.duration,
+                 map(lambda x: x * (self.step.total_seconds()/plot_delta.total_seconds()) + offset,
+                     count()))
+    if use_x_date:
+      t_arr = map(lambda x: datetime.combine(self.starting_date, time()) + plot_delta * x, t_arr)
+    t_arr = np.array(list(t_arr))
+
     # print(f't_arr.size()={len(t_arr)}')
     out = {}
     drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: self.drugs[x].name)
@@ -204,17 +285,45 @@ class BodyModel:
       # print(f"{n}: {drug}")
       timeline = self.drugs_timeline[drug]
       drug_name = self.drugs[drug].name_blood
+
       if self.drugs[drug].factor != 1.0:
         drug_name += f" (x{self.drugs[drug].factor})"
 
       if adjusted and drug in self.blood_level_factors and len(self.blood_level_factors[drug]) > 0:
-        arr_avg = np.array(list(map(lambda x: x * self.blood_level_factors[drug][0], timeline)))
+        # print(self.blood_level_factors)
+        factor_timeline = []
+        ev_num = 0
+        for t in range(len(timeline)):
+          t_time = datetime.combine(self.starting_date, time()) + t * self.step
+          if len(self.events) > 0:
+            if len(self.blood_level_factors[drug]) > ev_num + 1:
+              if datetime.combine(self.events[ev_num][0], time())+self.events[ev_num][1] > \
+                      t_time > datetime.combine(self.events[ev_num][0], time()):
+                factor: timedelta = t_time - datetime.combine(self.events[ev_num][0], time())
+                factor: float = factor / self.events[ev_num][1]
+                factor_timeline.append((self.blood_level_factors[drug][ev_num+1][0] * factor +
+                                        self.blood_level_factors[drug][ev_num][0] * (1-factor),
+                                        self.blood_level_factors[drug][ev_num+1][1] * factor +
+                                        self.blood_level_factors[drug][ev_num][1] * (1 - factor)
+                                        ))
+              elif datetime.combine(self.events[ev_num][0], time()) + self.events[ev_num][1] <= t_time:
+                ev_num += 1
+                factor_timeline.append(self.blood_level_factors[drug][ev_num])
+              else:
+                factor_timeline.append(self.blood_level_factors[drug][ev_num])
+            else:
+              factor_timeline.append(self.blood_level_factors[drug][ev_num])
+          else:
+            factor_timeline.append(self.blood_level_factors[drug][0])
+        self.factor_timeline[drug] = factor_timeline
+
+        arr_avg = np.array(list(map(lambda x: x[0] * x[1][0], zip(timeline, factor_timeline))))
         arr_min = np.array(list(map(
-              lambda x: x * self.blood_level_factors[drug][0] - self.blood_level_factors[drug][1] * stddev_multiplier,
-              timeline)))
+              lambda x: x[0] * x[1][0] - x[1][1] * stddev_multiplier,
+              zip(timeline, factor_timeline))))
         arr_max = np.array(list(map(
-              lambda x: x * self.blood_level_factors[drug][0] + self.blood_level_factors[drug][1] * stddev_multiplier,
-              timeline)))
+              lambda x: x[0] * x[1][0] + x[1][1] * stddev_multiplier,
+              zip(timeline, factor_timeline))))
         if color:
           # print(f"{drug}: {n} => {get_color(n)}")
           out[drug_name] = (arr_avg, arr_min, arr_max, get_color(n))
@@ -236,19 +345,23 @@ class BodyModel:
       return None
     blood_levels   = list(drop(7*24,
                                take(self.real_duration,
-                                    map(lambda x: x * self.blood_level_factors[drug][0],
-                                        self.drugs_timeline[drug]))))
+                                    map(lambda x: x[0] * x[1][0],
+                                        zip(self.drugs_timeline[drug], self.factor_timeline[drug])))))
     levels_avg     = sum(blood_levels) / len(blood_levels)
     sq_delta       = list(map(lambda x: (x - levels_avg)**2, blood_levels))
     levels_std_dev = math.sqrt(sum(sq_delta) / len(blood_levels))
     return levels_avg, levels_std_dev
 
-  def get_plot_lab_levels(self) -> Dict[str, Tuple[List[int], List[float]]]:
+  def get_plot_lab_levels(self, use_date: bool = False) -> Dict[str, Tuple[List[Union[int, datetime]], List[float]]]:
     lab_levels = {}
     for drug, ll_data in self.lab_levels.items():
+      start_time = datetime.combine(self.starting_date, time())
+      if use_date:
+        times = list(map(funcy.first, ll_data))
+      else:
+        times = list(map(lambda x: ((x[0] - start_time).total_seconds() / (3600 * 24)), ll_data))
       lab_levels[self.drugs[drug].name_blood] = (
-        list(map(lambda x: (
-          ((x[0] - datetime.combine(self.starting_date, time())).total_seconds() / (3600 * 24))), ll_data)),
+        times,
         list(map(lambda x: x[1], ll_data))
       )
     return lab_levels

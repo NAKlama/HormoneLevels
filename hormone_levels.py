@@ -7,13 +7,15 @@ from drugs import *
 from modelling import *
 from graphing.plot import plot_drugs
 
-from datetime import time
+import datetime
 
 from parser.yaml_parser import *
 
 from graphing.color_list import get_color
 
 from sys import argv
+
+starttime = datetime.now()
 
 config = YAMLparser(Path(argv[1]))
 
@@ -43,6 +45,10 @@ for lab in config.labs:
     lab_values[drug] = value
   lab_data.append(LabData(lab['date'], lab_values))
 model.add_lab_data(lab_data)
+
+if len(config.model['events']) > 0:
+  for event in config.model['events']:
+    model.add_event(event['event_date'], event['transition'])
 
 days_into_future = config.model['days_into_future']
 model.calculate_timeline(date.today() + timedelta(days=days_into_future))
@@ -78,13 +84,20 @@ else:
 if std_deviations_in_band == 1:
   # 68% confidence at a single standard deviation
   confidence = 68
-  data = model.get_plot_data(config.graph['units'], True,
-                             color=True, offset=config.graph['x_offset'])
+  data = model.get_plot_data(config.graph['units'],
+                             True,
+                             color=True,
+                             offset=config.graph['x_offset'],
+                             use_x_date=config.graph['use_x_date'])
 elif std_deviations_in_band == 2:
   # 95% Confidence at twice the standard deviation
   confidence = 95.5
-  data = model.get_plot_data(config.graph['units'], True,
-                             stddev_multiplier=2, color=True, offset=config.graph['x_offset'])
+  data = model.get_plot_data(config.graph['units'],
+                             True,
+                             stddev_multiplier=2,
+                             color=True,
+                             offset=config.graph['x_offset'],
+                             use_x_date=config.graph['use_x_date'])
 else:
   raise Exception("Can only have one or two standard deviations as banding options")
 
@@ -97,7 +110,7 @@ if len(lab_data) > 0:
       print(f"Average blood level for {drugs[drug].name} is {avg_level:6.2f} ± {std_dev_level*2:6.2f} ng/l (P<.046)")
       avg_levels[drugs[drug].name] = (avg_level, std_dev_level, get_color(n+len(drugs)+1))
 
-  lab_levels = model.get_plot_lab_levels()
+  lab_levels = model.get_plot_lab_levels(config.graph['use_x_date'])
 else:
   lab_levels = None
 
@@ -114,9 +127,16 @@ while duration > xticks * 20:
 if not config.graph['confidence']:
   confidence = None
 
+start_model = datetime.combine(config.model['start_date'], time())
+
 if not config.graph['deactivate_full_plot']:
+  if config.graph['use_x_date']:
+    x_win = (start_model, start_model + config.graph['units'] * duration)
+    now = datetime.now()
+  else:
+    x_win = (0, duration)
   plot_drugs(data=data,
-             x_window=(0, duration),
+             x_window=x_win,
              y_window=y_window,
              x_label=config.graph['x_label'],
              y_label=config.graph['y_label'],
@@ -125,7 +145,9 @@ if not config.graph['deactivate_full_plot']:
              now=now,
              title="Full view",
              x_ticks=xticks,
-             avg_levels=avg_levels)
+             avg_levels=avg_levels,
+             plot_dates=config.graph['use_x_date'],
+             )
 
 for plot in config.graph['plots']:
   if plot['time_absolute']:
@@ -134,9 +156,19 @@ for plot in config.graph['plots']:
   else:
     past_window   = duration - (plot['begin_day'] + days_into_future)
     future_window = (duration - days_into_future) + plot['end_day']
+  if plot['y_window'] is not None:
+    y_win = plot['y_window']
+  else:
+    y_win = y_window
+  if config.graph['use_x_date']:
+    x_win = (start_model+ config.graph['units'] * past_window,
+             start_model + config.graph['units'] * future_window)
+    now = datetime.now()
+  else:
+    x_win = (past_window, future_window)
   plot_drugs(data=data,
-             x_window=(past_window, future_window),
-             y_window=y_window,
+             x_window=x_win,
+             y_window=y_win,
              x_ticks=plot['x_ticks'],
              x_label=config.graph['x_label'],
              y_label=config.graph['y_label'],
@@ -144,7 +176,8 @@ for plot in config.graph['plots']:
              confidence_val=confidence,
              now=now,
              title=plot['title'],
-             avg_levels=avg_levels
+             avg_levels=avg_levels,
+             plot_dates=config.graph['use_x_date'],
              )
 
 if config.graph['prediction_error']:
@@ -191,6 +224,7 @@ if config.graph['prediction_error']:
              y_label="Deviation of estimation (%)",
              title="Prediction accuracy",
              plot_markers=True,
+             plot_dates=config.graph['use_x_date'],
              )
 
-
+# print(datetime.now() - starttime)

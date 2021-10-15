@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict, Union, List, TypedDict, Optional, Tuple, Any, TypeVar
 from datetime import datetime, date, timedelta, time
 
+import funcy
 from yaml import load
 try:
     from yaml import CLoader as Loader
@@ -28,11 +29,17 @@ class YAMLdose(TypedDict):
   dose: float
 
 
+class YAMLevent(TypedDict):
+  event_date:         date
+  transition:         timedelta
+
+
 class YAMLmodel(TypedDict):
   start_date:         date
   timedelta:          timedelta
   days_into_future:   int
   corrected_std_dev:  bool
+  events:             List[YAMLevent]
 
 
 class YAMLlabs(TypedDict):
@@ -46,10 +53,11 @@ class YAMLplot(TypedDict):
   time_absolute:  bool
   title:          Optional[str]
   x_ticks:        Optional[int]
+  y_window:       Optional[Tuple[float, float]]
 
 
 class YAMLgraph(TypedDict):
-  y_window:             Tuple[int, int]
+  y_window:             Tuple[float, float]
   two_std_dev_in_band:  bool
   units:                timedelta
   plots:                List[YAMLplot]
@@ -59,6 +67,7 @@ class YAMLgraph(TypedDict):
   x_offset:             int
   deactivate_full_plot: bool
   prediction_error:     bool
+  use_x_date:           bool
 
 
 class YAMLparser(object):
@@ -138,9 +147,11 @@ class YAMLparser(object):
       field_in = [field_in]
     for field in field_in:
       if field in data:
-        if isinstance(data, str):
-          match = time_parser.match(data)
+        if isinstance(data[field], str):
+          # print(data[field])
+          match = time_parser.match(data[field])
           if match:
+            # print("matched time")
             return time(hour=int(match.group(1)), minute=int(match.group(2)), second=int(match.group(3)))
           else:
             print(f"WARNING: time needs to be a valid time, got {data}")
@@ -153,7 +164,7 @@ class YAMLparser(object):
     if not isinstance(field_in, list):
       field_in = [field_in]
     for field in field_in:
-      if isinstance(data[field], date):
+      if field in data and isinstance(data[field], date):
         d = data[field]
         if t is not None:
           if isinstance(t, int):
@@ -166,7 +177,7 @@ class YAMLparser(object):
 
   @staticmethod
   def _parse_timedelta(data: Dict[str, Any],
-                       field_in: str = "timedelta",
+                       field_in: Union[str, List[str]] = "timedelta",
                        default: Optional[timedelta] = timedelta(hours=1)) -> timedelta:
     def parser(d: Dict[str, Union[str, int]]) -> Optional[timedelta]:
       if "unit" in d and "value" in d:
@@ -216,6 +227,34 @@ class YAMLparser(object):
         print(f"WARNING: Parsing Error: {e}")
     return default
 
+  @staticmethod
+  def _parse_tuple(data: Dict[str, Any],
+                   field_in: Union[str, List[str]] = ("y_window", "y-window"),
+                   length: int = 2,
+                   check_type: Optional[Union[type, List[type]]] = None,
+                   cast: Optional[type] = None,
+                   default: Optional[Tuple] = None) -> Optional[Tuple]:
+    if not isinstance(field_in, list):
+      field_in = [field_in]
+    if check_type is not None and not isinstance(check_type, list):
+      check_type = [check_type]
+    for field in field_in:
+      if field in data:
+        y_win = data[field]
+        if check_type is not None:
+          for item in y_win:
+            checks = map(lambda x: isinstance(item, x), check_type)
+            if not funcy.any(checks):
+              print(f"WARNING: Item {item} is not matching the possible types {check_type}")
+        if cast is not None:
+          y_win = map(cast, y_win)
+        if isinstance(y_win, list) and len(y_win) == length:
+          return tuple(y_win)
+        else:
+          print(f"WARNING: Cannot parse y_window, expecting a list of exactly two integers, "
+                f"got: {data[field]}")
+    return default
+
   def parse_drugs(self, raw_data: Dict[str, Any]) -> None:
     drugs = None
     if "drugs" in raw_data:
@@ -239,6 +278,13 @@ class YAMLparser(object):
           raise Exception(f"ERROR: drug without a name: {drug}")
 
   def parse_model(self, raw_data: Dict[str, Any]) -> None:
+    def parse_event(ev: Dict[str, Any]) -> Optional[YAMLevent]:
+      ev_date = self._parse_date(ev, ['start', 'date', 'start_date', 'start-date'], None)
+      if ev_date is None:
+        return None
+      ev_transition = self._parse_timedelta(ev, ['transition', 'duration'], timedelta(days=30))
+      return YAMLevent(event_date=ev_date, transition=ev_transition)
+
     if "model" in raw_data:
       assert isinstance(raw_data["model"], dict)
       model: Dict[str, Union[str, int, date, bool, Dict[str, Union[str, int]]]] = raw_data["model"]
@@ -247,10 +293,30 @@ class YAMLparser(object):
         time_d = self._parse_timedelta(model)
         days_into_future = self._parse_int(model, 'days_into_future', 90)
         corrected_std_dev = self._parse_bool(model, ['corrected_std_dev', 'corrected-std-dev'])
+        events = None
+        if "event" in model:
+          events = model['event']
+        elif "events" in model:
+          events = model['events']
+        event_list = []
+        if events is not None:
+          if isinstance(events, list):
+            for event in events:
+              e = parse_event(event)
+              if e is not None:
+                event_list.append(e)
+          elif isinstance(events, dict):
+            e = parse_event(events)
+            if e is not None:
+              event_list.append(e)
+          else:
+            raise Exception("ERROR: Events needs to be a list or a dictionary")
+
         self.model = YAMLmodel(start_date=start_date,
                                timedelta=time_d,
                                days_into_future=days_into_future,
-                               corrected_std_dev=corrected_std_dev)
+                               corrected_std_dev=corrected_std_dev,
+                               events=event_list)
       else:
         raise Exception("ERROR: start_date is needed in model!")
     else:
@@ -258,35 +324,36 @@ class YAMLparser(object):
 
   def parse_graph(self, raw_data: Dict[str, Any]) -> None:
     def parse_plot(plot_data: Dict[str, Union[int, str]]) -> Optional[YAMLplot]:
-      def get_title_x_ticks(plot_d: Dict[str, Union[int, str]],
-                            t_in: Optional[str],
-                            x_t_in: int) -> Tuple[Optional[str], int]:
+      def get_common_parameters(plot_d: Dict[str, Union[int, str]],
+                                t_in: Optional[str],
+                                x_t_in: int,
+                                y_window: Optional[Tuple[float, float]] = None
+                                ) -> Tuple[Optional[str], int, Optional[Tuple[float, float]]]:
         t   = self._parse_str(plot_d, 'title', t_in)
-        x_t = self._parse_int(plot_d, ['x_tickes', 'x-ticks'], x_t_in)
-        return t, x_t
+        x_t = self._parse_int(plot_d, ['x_ticks', 'x-ticks'], x_t_in)
+        y_w = self._parse_tuple(plot_d, ['y-window', 'y_window'], 2, check_type=[float, int], default=y_window)
+        return t, x_t, y_w
 
-      past_days = self._parse_int(plot_data, ['past_days', 'past-days'])
-      start_day = self._parse_int(plot_data, ['start_day', 'start-day'])
+      past_days = self._parse_int(plot_data, ['past_days', 'past-days', 'past'])
+      start_day = self._parse_int(plot_data, ['start_day', 'start-day', 'start'])
       if past_days is not None:
-        future_days   = self._parse_int(plot_data, ['future_days', 'future-days'] , 14)
-        title, x_ticks = get_title_x_ticks(plot_data, None, 7)
+        future_days   = self._parse_int(plot_data, ['future_days', 'future-days', 'future'] , 14)
+        title, x_ticks, y_win = get_common_parameters(plot_data, None, 7)
         return YAMLplot(begin_day=past_days,
                         end_day=future_days,
                         time_absolute=False,
                         title=title,
-                        x_ticks=x_ticks)
+                        x_ticks=x_ticks,
+                        y_window=y_win)
       elif start_day is not None:
-        if not isinstance(plot_data['start_day'], int):
-          print(f"WARNING: start_day needs to be an integer, got: {plot_data['start_day']}")
-          return None
-        start_day   = plot_data['start_day']
-        end_day     = self._parse_int(plot_data, ['end_day', 'end-day'], start_day + 90)
-        title, x_ticks = get_title_x_ticks(plot_data, None, 7)
+        end_day     = self._parse_int(plot_data, ['end_day', 'end-day', 'end'], start_day + 90)
+        title, x_ticks, y_win = get_common_parameters(plot_data, None, 7)
         return YAMLplot(begin_day=start_day,
                         end_day=end_day,
                         time_absolute=True,
                         title=title,
-                        x_ticks=x_ticks)
+                        x_ticks=x_ticks,
+                        y_window=y_win)
       else:
         print(f"WARNING: past_days is a mandatory category, missing in entry, discarding\n\t{plot_data}")
         return None
@@ -301,6 +368,7 @@ class YAMLparser(object):
     y_label                     = "Estimated blood levels (ng/l)"
     x_offset                    = 0
     prediction_error            = False
+    use_x_date                  = False
     graph = None
     if "graph" in raw_data:
       graph = raw_data['graph']
@@ -308,13 +376,7 @@ class YAMLparser(object):
       graph = raw_data['graphs']
     if graph is not None:
       assert(isinstance(graph, dict))
-      if "y_window" in graph:
-        y_win = graph['y_window']
-        if isinstance(y_win, list) and len(y_win) == 2 and isinstance(y_win[0], int) and isinstance(y_win[1], int):
-          y_window = tuple(y_win)
-        else:
-          print(f"WARNING: Cannot parse y_window, expecting a list of exactly two integers, "
-                f"got: {graph['y_window']}")
+      y_window = self._parse_tuple(graph, ["y_window", "y-window"], 2, check_type=int, default=y_window)
       two_std_dev_in_band = self._parse_bool(graph, ['two_std_dev_in_band', 'two-std-dev-in-band'], two_std_dev_in_band)
       units = self._parse_timedelta(graph, "units", units)
       prediction_error = self._parse_bool(graph, ['prediction_error', 'prediction-error'], prediction_error)
@@ -322,6 +384,7 @@ class YAMLparser(object):
                                               ['deactivate_full_plot', 'deactivate-full-plot'],
                                               deactivate_full_plot)
       confidence = self._parse_bool(graph, 'confidence', confidence)
+      use_x_date = self._parse_bool(graph, ['use_x_date', 'use-x-date'], use_x_date)
       x_label = self._parse_str(graph, ['x-label', 'x_label'], x_label)
       y_label = self._parse_str(graph, ['y-label', 'y_label'], y_label)
       x_offset = self._parse_int(graph, ['x_offset', 'x-offset'], 0)
@@ -347,7 +410,8 @@ class YAMLparser(object):
                            x_label=x_label,
                            y_label=y_label,
                            x_offset=x_offset,
-                           prediction_error=prediction_error
+                           prediction_error=prediction_error,
+                           use_x_date=use_x_date
                            )
 
   def parse_labs(self, raw_data: Dict[str, Any]) -> None:
@@ -428,7 +492,7 @@ class YAMLparser(object):
             if dose_amount is not None:
               repeat = self._parse_timedelta(dose, "repeat", None)
               if repeat is not None:
-                count  = self._parse_int(dose['repeat'], 'count', 2)
+                count  = self._parse_int(dose['repeat'], 'count', 1) + 1
                 for n in range(count):
                   self.doses[drug].append(YAMLdose(date=dose_date+(n*repeat), dose=dose_amount))
               else:
