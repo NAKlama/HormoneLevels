@@ -38,9 +38,13 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
                confidence_val:  Optional[float] = None,
                avg_levels:      Optional[Dict[str, Tuple[float, float, str]]] = None,
+               moving_average:  Optional[Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
                plot_markers:    bool = False,
                no_avg_label:    bool = True,
                plot_dates:      bool = False):
+  avg_colors = ["#A00000", "#006000", "#000000"]
+  avg_style  = [":", "-.", "--"]
+  avg_length = [5, 15, 30]
   plt.figure(dpi=800, tight_layout=True)
   plt.rc('xtick', labelsize=6)
   plt.rc('ytick', labelsize=6)
@@ -86,6 +90,14 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
     if color is not None:
       if plot_markers:
         if plot_dates:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot_date(d_t, moving_average[name][i],
+                            marker=".",
+                            linestyle=avg_style[i],
+                            label=f'{name} {avg_length[i]}d moving average',
+                            color=avg_colors[i],
+                            zorder=5)
           plt.plot_date(d_t, value,
                         marker=".",
                         linestyle="-",
@@ -93,6 +105,14 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                         color=color,
                         zorder=4)
         else:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot(d_t, moving_average[name][i],
+                       marker=".",
+                       linestyle=avg_style[i],
+                       label=f'{name} {avg_length[i]}d moving average',
+                       color=avg_colors[i],
+                       zorder=5)
           plt.plot(d_t, value,
                    marker=".",
                    linestyle="-",
@@ -101,13 +121,29 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                    zorder=4)
       else:
         if plot_dates:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot_date(d_t, moving_average[name][i],
+                            linestyle=avg_style[i],
+                            label=f'{name} {avg_length[i]}d moving average',
+                            markersize=0,
+                            color=avg_colors[i],
+                            zorder=5)
           plt.plot_date(d_t, value,
                         label=f'{name}',
                         linestyle="-",
                         markersize=0,
+                        linewidth=1,
                         color=color,
                         zorder=4)
         else:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot(d_t, moving_average[name][i],
+                       linestyle=avg_style[i],
+                       label=f'{name} {avg_length[i]}d moving average',
+                       color=avg_colors[i],
+                       zorder=5)
           plt.plot(d_t, value,
                    label=f'{name}',
                    color=color,
@@ -115,6 +151,14 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
     else:
       if plot_markers:
         if plot_dates:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot_date(d_t, moving_average[name][i],
+                            marker=".",
+                            label=f'{name} {avg_length[i]}d moving average',
+                            linestyle=avg_style[i],
+                            zorder=5,
+                            linewidth=2)
           plt.plot_date(d_t, value,
                         marker=".",
                         linestyle="-",
@@ -122,6 +166,13 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                         label=f'{name}',
                         zorder=4)
         else:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot(d_t, moving_average[name][i],
+                       linestyle=avg_style[i],
+                       marker=".",
+                       label=f'{name} {avg_length[i]}d moving average',
+                       zorder=5)
           plt.plot(d_t, value,
                    marker=".",
                    linestyle="-",
@@ -129,8 +180,21 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                    zorder=4)
       else:
         if plot_dates:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot_date(d_t, moving_average[name][i],
+                          label=f'{name} {avg_length[i]}d moving average',
+                          linestyle="--",
+                          zorder=5,
+                          linewidth=2)
           plt.plot_date(d_t, value, label=f'{name}', zorder=4, linewidth=2)
         else:
+          if moving_average is not None and name in moving_average:
+            for i in range(3):
+              plt.plot(d_t, moving_average[name][i],
+                     label=f'{name} {avg_length[i]}d moving average',
+                     linestyle="--",
+                     zorder=5)
           plt.plot(d_t, value, label=f'{name}', zorder=4)
     if confidence_val is not None and plot_cofidence:
       if color is not None:
@@ -142,10 +206,10 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
     if lab_data is not None and name in lab_data:
       if color is not None:
         plt.scatter(lab_data[name][0], lab_data[name][1], label=f'{name} lab values',
-                    marker='.', color="red", zorder=5)
+                    marker='.', color="red", zorder=6)
       else:
         plt.scatter(lab_data[name][0], lab_data[name][1], label=f'{name} lab values',
-                    marker='.', zorder=5)
+                    marker='.', zorder=6)
   if x_window is not None:
     plt.xlim(left=x_window[0], right=x_window[1])
     if plot_dates:

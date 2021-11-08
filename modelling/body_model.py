@@ -42,6 +42,7 @@ class BodyModel:
   labs_list: List[LabData]
   blood_level_factors: Dict[str, List[Tuple[float, float]]]
   factors_timeline: Dict[str, List[Tuple[float, float]]]
+  running_average:  Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]
   lab_levels: Dict[str, List[Tuple[datetime, float]]]
   lab_events: Dict[str, List[List[Tuple[datetime, float]]]]
   drugs_timeline: Dict[str, List[float]]
@@ -96,8 +97,9 @@ class BodyModel:
       self.doses_count[drug] = 0
     if drug not in self.doses_amount:
       self.doses_amount[drug] = 0.0
-    self.doses_count[drug] += 1
-    self.doses_amount[drug] += amount
+    if time_in <= datetime.now():
+      self.doses_count[drug] += 1
+      self.doses_amount[drug] += amount
 
   def add_lab_data(self, data_in: Union[LabData, List[LabData]]):
     if type(data_in) is type(LabData):
@@ -182,22 +184,6 @@ class BodyModel:
             return timeline[timepoint], self.blood_level_factors[d][ev_num][0], self.blood_level_factors[d][ev_num][1]
         else:
           return timeline[timepoint], self.blood_level_factors[d][0][0], self.blood_level_factors[d][0][1]
-        # for n, event in enumerate(self.events):
-        #   e_date, e_duration = event
-        #   e_date = datetime.combine(e_date, time())
-        #   if e_date < t < e_date+e_duration:
-        #     avg_0, stddev_0 = self.blood_level_factors[d][n]
-        #     avg_1, stddev_1 = self.blood_level_factors[d][n+1]
-        #     factor = (t - datetime.combine(e_date, time())) / e_duration
-        #     avg    = avg_1    * factor + avg_0    * (1-factor)
-        #     stddev = stddev_1 * factor + stddev_0 * (1-factor)
-        #     break
-        #   elif e_date >= t and n == events_max:
-        #     avg, stddev = self.blood_level_factors[d][n + 1]
-        #   elif e_date < t and n == 0:
-        #     avg, stddev = self.blood_level_factors[d][0]
-        #     break
-        #
       else:
         avg, stddev = self.blood_level_factors[d][0]
     else:
@@ -281,10 +267,21 @@ class BodyModel:
     out = {}
     drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: self.drugs[x].name)
 
+    thirty_days = int(timedelta(days=30).total_seconds())
+    two_weeks   = int(timedelta(days=15).total_seconds())
+    one_week    = int(timedelta(days=5).total_seconds())
+    step_time_d = int(self.step.total_seconds())
+    steps = (int(math.ceil(one_week / step_time_d)),
+             int(math.ceil(two_weeks / step_time_d)),
+             int(math.ceil(thirty_days / step_time_d)))
+
+    self.running_average = {}
+
     for n, drug in enumerate(drugs):
       # print(f"{n}: {drug}")
       timeline = self.drugs_timeline[drug]
       drug_name = self.drugs[drug].name_blood
+      # print(f"{steps}/{len(timeline)}")
 
       if self.drugs[drug].factor != 1.0:
         drug_name += f" (x{self.drugs[drug].factor})"
@@ -324,6 +321,20 @@ class BodyModel:
         arr_max = np.array(list(map(
               lambda x: x[0] * x[1][0] + x[1][1] * stddev_multiplier,
               zip(timeline, factor_timeline))))
+
+        running_average = [[], [], []]
+        for i in range(3):
+          running_average[i].append(arr_avg[0])
+          for x in range(1, min(steps[i], len(arr_avg))):
+            ra_sum = sum(arr_avg[:x])
+            running_average[i].append(ra_sum / x)
+          if len(arr_avg) > steps[i]:
+            for x in range(steps[i], len(arr_avg)):
+              ra_sum = sum(arr_avg[(x-steps[i]):x])
+              running_average[i].append(ra_sum / steps[i])
+
+        self.running_average[drug_name] = tuple(map(np.array, running_average))
+
         if color:
           # print(f"{drug}: {n} => {get_color(n)}")
           out[drug_name] = (arr_avg, arr_min, arr_max, get_color(n))

@@ -114,11 +114,13 @@ if len(lab_data) > 0:
 else:
   lab_levels = None
 
-# blood_draw = datetime(year=2021, month=10, day=7, hour=10, minute=40)
-# if blood_draw is not None:
-#   estimate_at_last_lab = model.get_blood_level_at_timepoint('estradiol', blood_draw)
-#   print(f"Estimate at blood draw: {estimate_at_last_lab[0] * estimate_at_last_lab[1]:6.2f} ± "
-#         f"{estimate_at_last_lab[2]*2:5.2f} ng/l (P<.046)")
+blood_draw = datetime(year=2021, month=10, day=28, hour=15, minute=00)
+if blood_draw is not None:
+  estimate_at_last_lab = model.get_blood_level_at_timepoint('estradiol', blood_draw)
+  print(f"Estimate at blood draw: {estimate_at_last_lab[0] * estimate_at_last_lab[1]:6.2f} ± "
+        f"{estimate_at_last_lab[2]*2:5.2f} ng/l (P<.046)")
+
+# print(list(model.running_average["Estradiol"]))
 
 xticks = 7
 while duration > xticks * 20:
@@ -147,6 +149,7 @@ if not config.graph['deactivate_full_plot']:
              x_ticks=xticks,
              avg_levels=avg_levels,
              plot_dates=config.graph['use_x_date'],
+             moving_average=model.running_average,
              )
 
 for plot in config.graph['plots']:
@@ -178,22 +181,39 @@ for plot in config.graph['plots']:
              title=plot['title'],
              avg_levels=avg_levels,
              plot_dates=config.graph['use_x_date'],
+             moving_average=model.running_average,
              )
 
 if config.graph['prediction_error']:
   times = []
   prediction_data = {}
   arrays = {}
-  min_t = 10000000
-  max_t = 0
+  if config.graph['use_x_date']:
+    min_t = datetime(2200, 12, 31, 23, 59, 59)
+    max_t = datetime(1970, 1, 1, 0, 0, 0)
+  else:
+    min_t = 10000000
+    max_t = 0
   magnitude = 0.0
   for lab in config.labs:
     lab_date   = lab['date']
     lab_value  = lab['values']
     plot_start = datetime.combine(config.model['start_date'], time(0, 0, 0))
-    lab_time   = (lab_date - plot_start).total_seconds() / config.graph['units'].total_seconds()
-    min_t      = min(min_t, lab_time)
-    max_t      = max(max_t, lab_time)
+    if config.graph['use_x_date']:
+      lab_time   = lab_date
+      min_t      = min(min_t, lab_time)
+      max_t      = max(max_t, lab_time)
+      # if lab_time < min_t:
+      #   min_t = lab_time
+      # if lab_time > max_t:
+      #   max_t = lab_time
+      x_window   = (min_t - timedelta(days=7), max_t + timedelta(days=7))
+    else:
+      lab_time   = (lab_date - plot_start).total_seconds() / config.graph['units'].total_seconds()
+      min_t      = min(min_t, lab_time)
+      max_t      = max(max_t, lab_time)
+      x_window   = (max(min_t - 7, 0), min(max_t + 7, duration))
+
     times.append(lab_time)
     for drug, lab_val in lab_value.items():
       predicted = model.get_blood_level_at_timepoint(drug, lab_date)
@@ -209,7 +229,10 @@ if config.graph['prediction_error']:
       prediction_data[drug].append(val)
   for drug, data in prediction_data.items():
     arrays[drug] = (np.array(data), np.array(data), np.array(data))
-  duration_labs = max_t - min_t + 14
+  if config.graph['use_x_date']:
+    duration_labs = math.ceil((max_t - min_t + timedelta(days=14)).total_seconds() / (3600*24))
+  else:
+    duration_labs = max_t - min_t + 14
   delta = 7
   tick_count = math.floor(duration_labs / delta)
   while tick_count > 12:
@@ -217,7 +240,7 @@ if config.graph['prediction_error']:
     tick_count = math.floor(duration_labs / delta)
 
   plot_drugs(data=(np.array(times), arrays),
-             x_window=(max(min_t - 7, 0), min(max_t + 7, duration)),
+             x_window=x_window,
              y_window=(-magnitude * 1.2, magnitude * 1.2),
              x_ticks=delta,
              x_label=config.graph['x_label'],
