@@ -30,6 +30,12 @@ for drug_key, drug in config.drugs.items():
   else:
     print(f"WARNING: Cannot find drug {drug_name} in database")
 
+std_dev_count = 1
+p_confidence  = ".317"
+if config.graph["two_std_dev_in_band"]:
+  std_dev_count = 2
+  p_confidence = ".046"
+
 model = BodyModel(config.model['start_date'], config.model['timedelta'])
 for drug_key, drug_class in drugs.items():
   model.add_drugs(drug_key, drug_class)
@@ -56,7 +62,7 @@ if len(lab_data) > 0:
   model.estimate_blood_levels(corrected_std_dev=config.model['corrected_std_dev'])
 
   for drug in drugs.keys():
-    ll_message = model.get_current_blood_level_message(drug)
+    ll_message = model.get_current_blood_level_message(drug, std_dev_count, p_confidence)
     if ll_message is not None:
       print(ll_message)
     if model.doses_count[drug] > 0 and model.doses_amount[drug] > 0.0:
@@ -107,18 +113,22 @@ if len(lab_data) > 0:
     stats = model.get_statistical_data(drug)
     if stats is not None:
       avg_level, std_dev_level = stats
-      print(f"Average blood level for {drugs[drug].name} is {avg_level:6.2f} ± {std_dev_level*2:6.2f} ng/l (P<.046)")
+      print(f"Average blood level for {drugs[drug].name} "
+            f"is {avg_level:6.2f} "
+            f"± {std_dev_level*std_dev_count:6.2f} ng/l (P<{p_confidence})")
       avg_levels[drugs[drug].name] = (avg_level, std_dev_level, get_color(n+len(drugs)+1))
 
   lab_levels = model.get_plot_lab_levels(config.graph['use_x_date'])
 else:
   lab_levels = None
 
-blood_draw = datetime(year=2021, month=10, day=28, hour=15, minute=00)
-if blood_draw is not None:
-  estimate_at_last_lab = model.get_blood_level_at_timepoint('estradiol', blood_draw)
-  print(f"Estimate at blood draw: {estimate_at_last_lab[0] * estimate_at_last_lab[1]:6.2f} ± "
-        f"{estimate_at_last_lab[2]*2:5.2f} ng/l (P<.046)")
+# blood_draw = datetime(year=2021, month=10, day=28, hour=15, minute=00)
+
+if len(config.print_estimates) > 0:
+  for blood_draw in config.print_estimates:
+    estimate_at_last_lab = model.get_blood_level_at_timepoint('estradiol', blood_draw)
+    print(f"Estimate at {blood_draw}: {estimate_at_last_lab[0] * estimate_at_last_lab[1]:6.2f} ± "
+          f"{estimate_at_last_lab[2]*std_dev_count:5.2f} ng/l (P<{p_confidence})")
 
 # print(list(model.running_average["Estradiol"]))
 

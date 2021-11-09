@@ -71,23 +71,26 @@ class YAMLgraph(TypedDict):
 
 
 class YAMLparser(object):
-  drugs:  Dict[str, YAMLdrug]
-  model:  YAMLmodel
-  graph:  YAMLgraph
-  labs:   List[YAMLlabs]
-  doses:  Dict[str, List[YAMLdose]]
+  drugs:            Dict[str, YAMLdrug]
+  model:            YAMLmodel
+  graph:            YAMLgraph
+  labs:             List[YAMLlabs]
+  doses:            Dict[str, List[YAMLdose]]
+  print_estimates:  List[datetime]
 
   def __init__(self, file: Path):
-    self.drugs = {}
-    self.labs  = []
-    self.doses = {}
+    self.drugs            = {}
+    self.labs             = []
+    self.doses            = {}
+    self.print_estimates  = []
     with file.open('r') as yaml_file:
-      raw_data = load(yaml_file, Loader=Loader)
-      self.parse_drugs(raw_data)
-      self.parse_model(raw_data)
-      self.parse_graph(raw_data)
-      self.parse_labs(raw_data)
-      self.parse_doses(raw_data)
+      raw_yaml_data = load(yaml_file, Loader=Loader)
+      self.parse_drugs(raw_yaml_data)
+      self.parse_model(raw_yaml_data)
+      self.parse_graph(raw_yaml_data)
+      self.parse_labs(raw_yaml_data)
+      self.parse_doses(raw_yaml_data)
+      self.parse_print_estimates(raw_yaml_data)
 
   @staticmethod
   def __general_parser(data: Dict[str, Any],
@@ -147,6 +150,7 @@ class YAMLparser(object):
       field_in = [field_in]
     for field in field_in:
       if field in data:
+        # print(f"{data[field]} ({type(data[field])})")
         if isinstance(data[field], str):
           # print(data[field])
           match = time_parser.match(data[field])
@@ -164,6 +168,8 @@ class YAMLparser(object):
     if not isinstance(field_in, list):
       field_in = [field_in]
     for field in field_in:
+      if field in data and isinstance(data[field], datetime):
+        return data[field]
       if field in data and isinstance(data[field], date):
         d = data[field]
         if t is not None:
@@ -172,7 +178,7 @@ class YAMLparser(object):
           else:
             return datetime.combine(date(year=d.year, month=d.month, day=d.day), t)
         else:
-          return date(year=d.year, month=d.month, day=d.day)
+          return d
     raise Exception(f"ERROR: Cannot parse date in {data}")
 
   @staticmethod
@@ -254,6 +260,19 @@ class YAMLparser(object):
           print(f"WARNING: Cannot parse y_window, expecting a list of exactly two integers, "
                 f"got: {data[field]}")
     return default
+
+  def parse_print_estimates(self, raw_data: Dict[str, Any]) -> None:
+    pr_est = None
+    if "print_estimates" in raw_data:
+      pr_est = raw_data['print_estimates']
+    elif "print-estimates" in raw_data:
+      pr_est = raw_data['print-estimates']
+    assert isinstance(pr_est, list)
+    for est in pr_est:
+      hour = self._parse_int(est, 'hour', 12)
+      hour = self._parse_time(est, 'time', hour)
+      pr_est_date = self._parse_date(est, 'date', hour)
+      self.print_estimates.append(pr_est_date)
 
   def parse_drugs(self, raw_data: Dict[str, Any]) -> None:
     drugs = None

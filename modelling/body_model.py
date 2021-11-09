@@ -191,12 +191,14 @@ class BodyModel:
       stddev = timeline[timepoint]
     return timeline[timepoint], avg, stddev
 
-  def get_current_blood_level_message(self, d: str) -> Optional[str]:
+  def get_current_blood_level_message(self, d: str,
+                                      std_dev_count: int = 2,
+                                      p_confidence: str = ".046") -> Optional[str]:
     if d in self.lab_levels:
       drug_amount, factor_avg, factor_stddev = self.get_blood_level_at_timepoint(d, datetime.now())
       return f"Estimated blood level ({self.drugs[d].name_blood}): " \
              f"{drug_amount * factor_avg:6.2f} ± " \
-             f"{factor_stddev * 2:5.2f} ng/l (P<.046)" \
+             f"{factor_stddev * std_dev_count:5.2f} ng/l (P<{p_confidence})" \
              f"     -     factor: {factor_avg:6.1f}"
     return None
 
