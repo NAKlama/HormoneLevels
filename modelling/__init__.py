@@ -15,5 +15,5 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .body_model import BodyModel
+from .body_model import BodyModel, plot_data_type
 from .lab_data import LabData

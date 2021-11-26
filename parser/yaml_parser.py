@@ -267,12 +267,13 @@ class YAMLparser(object):
       pr_est = raw_data['print_estimates']
     elif "print-estimates" in raw_data:
       pr_est = raw_data['print-estimates']
-    assert isinstance(pr_est, list)
-    for est in pr_est:
-      hour = self._parse_int(est, 'hour', 12)
-      hour = self._parse_time(est, 'time', hour)
-      pr_est_date = self._parse_date(est, 'date', hour)
-      self.print_estimates.append(pr_est_date)
+    if pr_est is not None:
+      assert isinstance(pr_est, list)
+      for est in pr_est:
+        hour = self._parse_int(est, 'hour', 12)
+        hour = self._parse_time(est, 'time', hour)
+        pr_est_date = self._parse_date(est, 'date', hour)
+        self.print_estimates.append(pr_est_date)
 
   def parse_drugs(self, raw_data: Dict[str, Any]) -> None:
     drugs = None

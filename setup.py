@@ -15,11 +15,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from distutils.core import setup
+import version
 
 setup(
   name="HormoneLevels",
   description="Compute and graph hormone levels for transgender HRT",
-  version='0.4.0',
+  version=version.PROGRAM_VERSION,
   license="GPLv3",
   author="Nina Alexandra Klama",
   author_email="gitlab@fklama.de",

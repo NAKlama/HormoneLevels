@@ -95,7 +95,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
               plt.plot_date(d_t, moving_average[name][i],
                             marker=".",
                             linestyle=avg_style[i],
-                            label=f'{name} {avg_length[i]}d moving average',
+                            label=f'{name} {avg_length[i]}d average',
                             color=avg_colors[i],
                             zorder=5)
           plt.plot_date(d_t, value,
@@ -110,7 +110,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
               plt.plot(d_t, moving_average[name][i],
                        marker=".",
                        linestyle=avg_style[i],
-                       label=f'{name} {avg_length[i]}d moving average',
+                       label=f'{name} {avg_length[i]}d average',
                        color=avg_colors[i],
                        zorder=5)
           plt.plot(d_t, value,
@@ -125,7 +125,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
             for i in range(3):
               plt.plot_date(d_t, moving_average[name][i],
                             linestyle=avg_style[i],
-                            label=f'{name} {avg_length[i]}d moving average',
+                            label=f'{name} {avg_length[i]}d average',
                             markersize=0,
                             color=avg_colors[i],
                             zorder=5)
@@ -141,7 +141,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
             for i in range(3):
               plt.plot(d_t, moving_average[name][i],
                        linestyle=avg_style[i],
-                       label=f'{name} {avg_length[i]}d moving average',
+                       label=f'{name} {avg_length[i]}d average',
                        color=avg_colors[i],
                        zorder=5)
           plt.plot(d_t, value,
@@ -155,7 +155,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
             for i in range(3):
               plt.plot_date(d_t, moving_average[name][i],
                             marker=".",
-                            label=f'{name} {avg_length[i]}d moving average',
+                            label=f'{name} {avg_length[i]}d average',
                             linestyle=avg_style[i],
                             zorder=5,
                             linewidth=2)
@@ -171,7 +171,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
               plt.plot(d_t, moving_average[name][i],
                        linestyle=avg_style[i],
                        marker=".",
-                       label=f'{name} {avg_length[i]}d moving average',
+                       label=f'{name} {avg_length[i]}d average',
                        zorder=5)
           plt.plot(d_t, value,
                    marker=".",
@@ -183,18 +183,18 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
           if moving_average is not None and name in moving_average:
             for i in range(3):
               plt.plot_date(d_t, moving_average[name][i],
-                          label=f'{name} {avg_length[i]}d moving average',
-                          linestyle="--",
-                          zorder=5,
-                          linewidth=2)
+                            label=f'{name} {avg_length[i]}d average',
+                            linestyle="--",
+                            zorder=5,
+                            linewidth=2)
           plt.plot_date(d_t, value, label=f'{name}', zorder=4, linewidth=2)
         else:
           if moving_average is not None and name in moving_average:
             for i in range(3):
               plt.plot(d_t, moving_average[name][i],
-                     label=f'{name} {avg_length[i]}d moving average',
-                     linestyle="--",
-                     zorder=5)
+                       label=f'{name} {avg_length[i]}d average',
+                       linestyle="--",
+                       zorder=5)
           plt.plot(d_t, value, label=f'{name}', zorder=4)
     if confidence_val is not None and plot_cofidence:
       if color is not None:
