@@ -147,6 +147,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
           plt.plot(d_t, value,
                    label=f'{name}',
                    color=color,
+                   linewidth=1,
                    zorder=4)
     else:
       if plot_markers:
