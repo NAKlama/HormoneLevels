@@ -24,8 +24,9 @@ import numpy as np
 from drugs.drug import Drug
 from modelling.dose import Dose
 from datetime import datetime, date, timedelta, time
-from funcy import take, map, count, drop
+from funcy import take, map, count, drop, lmap
 
+from modelling.group_sum import GroupSum
 from modelling.lab_data import LabData
 from graphing.color_list import get_color
 
@@ -51,6 +52,7 @@ class BodyModel:
   doses_count: Dict[str, int]
   doses_amount: Dict[str, float]
   events: List[Tuple[date, timedelta]]
+  step_days: Tuple[int, int, int]
 
   def __init__(self, starting_date: date, time_steps: timedelta):
     self.starting_date = starting_date
@@ -69,6 +71,7 @@ class BodyModel:
     self.doses_count = {}
     self.doses_amount = {}
     self.events = []
+    self.step_days = (5, 30, 90)
 
   @staticmethod
   def delta_to_hours(td: timedelta) -> int:
@@ -158,11 +161,11 @@ class BodyModel:
   def get_blood_level_at_timepoint(self, d: str, t: datetime) -> Tuple[float, float, float]:
     timeline    = self.drugs_timeline[d]
     timepoint   = self.__get_timepoint(t)
-    avg = 0.0
-    stddev = 0.0
+    # avg = 0.0
+    # stddev = 0.0
     if d in self.blood_level_factors:
       if len(self.events) > 0:
-        events_max = len(self.events)-1
+        # events_max = len(self.events)-1
         ev_num = 0
         if len(self.events) > 0:
           if len(self.blood_level_factors[d]) > ev_num + 1:
@@ -269,13 +272,11 @@ class BodyModel:
     out = {}
     drugs = sorted(list(self.drugs_timeline.keys()), key=lambda x: self.drugs[x].name)
 
-    thirty_days = int(timedelta(days=30).total_seconds())
-    two_weeks   = int(timedelta(days=15).total_seconds())
-    one_week    = int(timedelta(days=5).total_seconds())
     step_time_d = int(self.step.total_seconds())
-    steps = (int(math.ceil(one_week / step_time_d)),
-             int(math.ceil(two_weeks / step_time_d)),
-             int(math.ceil(thirty_days / step_time_d)))
+
+    steps = (int(math.ceil(int(timedelta(days=self.step_days[0]).total_seconds()) / step_time_d)),
+             int(math.ceil(int(timedelta(days=self.step_days[1]).total_seconds()) / step_time_d)),
+             int(math.ceil(int(timedelta(days=self.step_days[2]).total_seconds()) / step_time_d)))
 
     self.running_average = {}
 
@@ -316,24 +317,24 @@ class BodyModel:
             factor_timeline.append(self.blood_level_factors[drug][0])
         self.factor_timeline[drug] = factor_timeline
 
-        arr_avg = np.array(list(map(lambda x: x[0] * x[1][0], zip(timeline, factor_timeline))))
-        arr_min = np.array(list(map(
+        list_avg = lmap(lambda x: x[0] * x[1][0], zip(timeline, factor_timeline))
+        arr_avg = np.array(list_avg)
+        arr_min = np.array(lmap(
               lambda x: x[0] * x[1][0] - x[1][1] * stddev_multiplier,
-              zip(timeline, factor_timeline))))
-        arr_max = np.array(list(map(
+              zip(timeline, factor_timeline)))
+        arr_max = np.array(lmap(
               lambda x: x[0] * x[1][0] + x[1][1] * stddev_multiplier,
-              zip(timeline, factor_timeline))))
+              zip(timeline, factor_timeline)))
+
+        group_sum = GroupSum()
+        group_sum.counts_needed(list(steps))
+        group_sum.set_data(list_avg)
 
         running_average = [[], [], []]
         for i in range(3):
-          running_average[i].append(arr_avg[0])
-          for x in range(1, min(steps[i], len(arr_avg))):
-            ra_sum = sum(arr_avg[:x])
-            running_average[i].append(ra_sum / x)
-          if len(arr_avg) > steps[i]:
-            for x in range(steps[i], len(arr_avg)):
-              ra_sum = sum(arr_avg[(x-steps[i]):x])
-              running_average[i].append(ra_sum / steps[i])
+          running_average[i] = lmap(lambda s: s[0]/max(min(steps[i], s[1]), 1),
+                                    zip(map(group_sum.sum_getter(steps[i]), range(len(list_avg))),
+                                        range(len(list_avg))))
 
         self.running_average[drug_name] = tuple(map(np.array, running_average))
 

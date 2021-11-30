@@ -1,5 +1,4 @@
 import math
-from pathlib import Path
 
 import numpy as np
 
@@ -12,6 +11,9 @@ from parser.yaml_parser import *
 from graphing.color_list import get_color
 
 from sys import argv
+
+
+STEP_DAYS = (5, 30, 90)
 
 
 class HormoneLevels:
@@ -65,6 +67,7 @@ class HormoneLevels:
 
     self.y_window = self.config.graph['y_window']
 
+    self.model.step_days = STEP_DAYS
     self.data, self.confidence = self.get_data()
     self.avg_levels, self.lab_levels = self.calculate_lab_levels()
 
@@ -114,8 +117,8 @@ class HormoneLevels:
     self.lab_data_list = []
     for lab in config.labs:
       lab_values = {}
-      for drug, value in lab['values'].items():
-        lab_values[drug] = value
+      for drug_key, value in lab['values'].items():
+        lab_values[drug_key] = value
       self.lab_data_list.append(LabData(lab['date'], lab_values))
     model.add_lab_data(self.lab_data_list)
 
@@ -212,6 +215,7 @@ class HormoneLevels:
                  avg_levels=self.avg_levels,
                  plot_dates=self.config.graph['use_x_date'],
                  moving_average=self.model.running_average,
+                 avg_length=STEP_DAYS,
                  )
 
   def plots(self) -> None:
@@ -245,6 +249,7 @@ class HormoneLevels:
                  avg_levels=self.avg_levels,
                  plot_dates=self.config.graph['use_x_date'],
                  moving_average=self.model.running_average,
+                 avg_length=STEP_DAYS,
                  )
 
   def plot_prediction_error(self) -> None:

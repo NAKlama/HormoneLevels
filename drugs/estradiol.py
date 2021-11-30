@@ -19,7 +19,7 @@ from datetime import timedelta
 
 
 class Estradiol(drug.Drug):
-  def __init__(self, mode: str = "gel"):
+  def __init__(self):
     half_life = timedelta(hours=1, minutes=30)
     super().__init__("Estradiol", half_life)
 

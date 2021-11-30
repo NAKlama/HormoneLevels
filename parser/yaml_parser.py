@@ -276,7 +276,6 @@ class YAMLparser(object):
         self.print_estimates.append(pr_est_date)
 
   def parse_drugs(self, raw_data: Dict[str, Any]) -> None:
-    drugs = None
     if "drugs" in raw_data:
       drugs = raw_data['drugs']
     elif "drug" in raw_data:
@@ -347,17 +346,17 @@ class YAMLparser(object):
       def get_common_parameters(plot_d: Dict[str, Union[int, str]],
                                 t_in: Optional[str],
                                 x_t_in: int,
-                                y_window: Optional[Tuple[float, float]] = None
+                                y_win: Optional[Tuple[float, float]] = None
                                 ) -> Tuple[Optional[str], int, Optional[Tuple[float, float]]]:
         t   = self._parse_str(plot_d, 'title', t_in)
         x_t = self._parse_int(plot_d, ['x_ticks', 'x-ticks'], x_t_in)
-        y_w = self._parse_tuple(plot_d, ['y-window', 'y_window'], 2, check_type=[float, int], default=y_window)
+        y_w = self._parse_tuple(plot_d, ['y-window', 'y_window'], 2, check_type=[float, int], default=y_win)
         return t, x_t, y_w
 
       past_days = self._parse_int(plot_data, ['past_days', 'past-days', 'past'])
       start_day = self._parse_int(plot_data, ['start_day', 'start-day', 'start'])
       if past_days is not None:
-        future_days   = self._parse_int(plot_data, ['future_days', 'future-days', 'future'] , 14)
+        future_days   = self._parse_int(plot_data, ['future_days', 'future-days', 'future'], 14)
         title, x_ticks, y_win = get_common_parameters(plot_data, None, 7)
         return YAMLplot(begin_day=past_days,
                         end_day=future_days,

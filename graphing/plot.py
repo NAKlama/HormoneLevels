@@ -16,7 +16,6 @@
 import sys
 from typing import Optional, Tuple, Dict, List, Union
 
-import funcy
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
@@ -41,10 +40,12 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
                moving_average:  Optional[Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
                plot_markers:    bool = False,
                no_avg_label:    bool = True,
-               plot_dates:      bool = False):
+               plot_dates:      bool = False,
+               avg_length:      Optional[Tuple[int, int, int]] = None):
   avg_colors = ["#A00000", "#006000", "#000000"]
   avg_style  = [":", "-.", "--"]
-  avg_length = [5, 15, 30]
+  if avg_length is None:
+    avg_length = (5, 30, 90)
   plt.figure(dpi=800, tight_layout=True)
   plt.rc('xtick', labelsize=6)
   plt.rc('ytick', labelsize=6)
