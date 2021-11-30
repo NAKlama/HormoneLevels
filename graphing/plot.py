@@ -228,7 +228,7 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
   plt.grid()
   plt.axhline(y=0.0, color='k', zorder=0)
   if now is not None:
-    plt.axvline(now, color="green")
+    plt.axvline(now, color="red", linewidth=1, zorder=0)
   if x_label is None:
     plt.xlabel("Time (days)")
   else:

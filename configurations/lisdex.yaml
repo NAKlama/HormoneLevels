@@ -11,6 +11,7 @@ model:
 
 graph:
   y_window: [ 0, 20 ]
+  y_label: "Amount in body (mg)"
   two_std_dev_in_band: true
   units:
     unit: hours
@@ -18,11 +19,15 @@ graph:
   deactivate_full_plot: true
   confidence: false
   x_label: Time (h)
-  x_offset: -168
+  x_offset: -168  # 7d
+#  x_offset: -216  # 9d
   plots:
     - start: 0
-      end: 24
-      title: Lisdex on day 8
+#      end: 24
+      end: 96
+#      title: Lisdex on day 1
+#      title: Lisdex on day 8
+      title: Lisdex on day 8 - 10
       x_ticks: 6
 
 doses:
@@ -30,3 +35,4 @@ doses:
     - { date: 2020-01-01, time: "00:00:00", dose: 50,
         repeat: {count: 7, unit: day, value: 1}}
     - { date: 2020-01-10, time: "00:00:00", dose: 50 }
+    - { date: 2020-01-11, time: "00:00:00", dose: 50 }

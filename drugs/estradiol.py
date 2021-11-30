@@ -28,8 +28,8 @@ class EstradiolGel(drug.Drug):
   def __init__(self):
     half_life = timedelta(hours=36)
     super().__init__("Estradiol Gel", half_life)
-    self.set_flood_in([1, 2, 3, 2, 1])
+    self.set_flood_in([3, 4, 3, 2, 1])
     self.flood_in_timedelta = timedelta(hours=1)
-    self.add_metabolite("Estradiol", 1.0)
+    self.add_metabolite("Estradiol", 0.5)
 
 

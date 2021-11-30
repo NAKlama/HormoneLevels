@@ -183,7 +183,7 @@ class HormoneLevels:
   def print_estimates(self) -> None:
     if len(self.config.print_estimates) > 0:
       for blood_draw in self.config.print_estimates:
-        estimate_at_last_lab = self.model.get_blood_level_at_timepoint('estradiol', blood_draw)
+        estimate_at_last_lab = self.model.get_blood_level_at_timepoint('Estradiol', blood_draw)
         print(f"Estimate at {blood_draw}: {estimate_at_last_lab[0] * estimate_at_last_lab[1]:6.2f} ± "
               f"{estimate_at_last_lab[2] * self.std_dev_count:5.2f} ng/l (P<{self.p_confidence})")
 

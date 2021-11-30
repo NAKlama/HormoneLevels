@@ -113,10 +113,10 @@ class BodyModel:
     drugs = set(self.doses_list.keys())
     while True:
       start_len = len(drugs)
-      new_drugs = []
+      new_drugs = set()
       for d in drugs:
         for m, _ in self.drugs[d].metabolites:
-          new_drugs.append(self.drugs_by_name[m])
+          new_drugs.add(self.drugs_by_name[m])
       for d in new_drugs:
         drugs.add(d)
       if len(drugs) == start_len:
@@ -137,7 +137,7 @@ class BodyModel:
             if drug not in self.doses_list:
               self.doses_list[self.drugs_by_name[drug]] = []
             self.doses_list[self.drugs_by_name[drug]].insert(0, Dose(self.drugs[self.drugs_by_name[drug]],
-                                                 amount, time_t, True))
+                                                             amount, time_t, True))
         else:
           self.drugs_timeline[d].append(0.0)
         while d in self.doses_list and \
