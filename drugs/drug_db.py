@@ -1,6 +1,8 @@
 from .estradiol import Estradiol, EstradiolGel
 from .estradiol_valerate import EstradiolValerate
 from .estradiol_cypionate import EstradiolCypionate
+from .testosterone import Testosterone
+from .testosterone_cypionate import TestosteroneCypionate
 from .metylphenidate import Methylphenidate
 from .lisdex import Lisdexamphetamine, Dexamphetamine
 from .cyproterone_acetate import CyproteroneAcetate
@@ -24,3 +26,7 @@ def drug_db(drug_string: str) -> Optional[type]:
     return Dexamphetamine
   if drug_string.lower() in ["cpa", "cypro", 'cyproterone', 'cyproterone acetate']:
     return CyproteroneAcetate
+  if drug_string.lower() in ["t", "testo", "testosterone"]:
+    return Testosterone
+  if drug_string.lower() in ["tcyp", "testosterone cypionate"]:
+    return TestosteroneCypionate

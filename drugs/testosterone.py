@@ -14,13 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# from .estradiol import Estradiol
-from .estradiol import Estradiol
-from .estradiol_valerate import EstradiolValerate
-from .estradiol_cypionate import EstradiolCypionate
-from .testosterone import Testosterone
-from .testosterone_cypionate import TestosteroneCypionate
-from .metylphenidate import Methylphenidate
-from .lisdex import Lisdexamphetamine, Dexamphetamine
-from .drug import Drug
-from .drug_db import drug_db
+import drugs.drug as drug
+from datetime import timedelta
+
+
+class Testosterone(drug.Drug):
+  def __init__(self):
+    half_life = timedelta(hours=3)
+    super().__init__("Testosterone", half_life)
+

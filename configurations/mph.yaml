@@ -2,28 +2,29 @@ drugs:
   mph: "Methylphenidate"
 
 model:
-  start_date: 2020-01-01
+  start_date: 2021-12-30
   timedelta:
     unit: minutes
     value: 1
   days_into_future: 0
 
 graph:
-  y_window: [ 0, 30 ]
+  y_window: [ 0, 50 ]
   two_std_dev_in_band: true
   units:
     unit: hours
     value: 1
   deactivate_full_plot: true
   plots:
-    - start_day: 0
-      end_day: 24
+    - start: 0
+      end: 48
       title: MPH
       x_ticks: 6
 
 doses:
   mph:
-    - { date: 2020-01-01, time: "00:15:00", dose: 20 }
-    - { date: 2020-01-01, time: "04:15:00", dose: 10 }
-    - { date: 2020-01-01, time: "08:15:00", dose: 10 }
+    - { date: 2021-12-30 15:47:00, dose: 10 }
+    - { date: 2021-12-30 16:05:00, dose: 10 }
+    - { date: 2021-12-30 16:45:00, dose: 10 }
+    - { date: 2021-12-30 19:55:00, dose: 10 }
 
