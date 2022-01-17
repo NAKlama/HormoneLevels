@@ -83,7 +83,7 @@ def product(seq: Iterable[T]) -> T:
   return reduce(operator.mul, seq)
 
 
-class GroupSum:
+class GroupSum(object):
   factors: List[int]
 
   groups:   Optional[List["GroupSum"]]

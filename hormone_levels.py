@@ -218,6 +218,7 @@ class HormoneLevels:
                  avg_levels=self.avg_levels,
                  plot_dates=self.config.graph['use_x_date'],
                  moving_average=self.model.running_average,
+                 moving_deviation=self.model.running_stddev,
                  avg_length=STEP_DAYS,
                  )
 
@@ -252,6 +253,7 @@ class HormoneLevels:
                  avg_levels=self.avg_levels,
                  plot_dates=self.config.graph['use_x_date'],
                  moving_average=self.model.running_average,
+                 moving_deviation=self.model.running_stddev,
                  avg_length=STEP_DAYS,
                  )
 

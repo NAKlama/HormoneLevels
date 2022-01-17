@@ -16,23 +16,41 @@
 
 
 import math
-from typing import List, Dict, Tuple, Union, Optional
+from typing import List, Dict, Tuple, Union, Optional, Callable
 
 import funcy
 import numpy as np
 
 from drugs.drug import Drug
-from modelling.dose import Dose
 from datetime import datetime, date, timedelta, time
 from funcy import take, map, count, drop, lmap
 
 from modelling.group_sum import GroupSum
 from modelling.lab_data import LabData
+from modelling.dose import Dose
+from modelling.sized_pot import SizedPot
 from graphing.color_list import get_color
+
+import multiprocessing as mp
 
 
 plot_data_type = Union[Tuple[np.ndarray, np.ndarray, np.ndarray],
                        Tuple[np.ndarray, np.ndarray, np.ndarray, str]]
+
+
+def calculate_running_statistics(in_data: Tuple[List[int], List[float], int]) \
+        -> Tuple[List[float], List[float]]:
+  steps, list_avg, i = in_data
+  sized_pot = SizedPot(steps[i])
+  group_sum = GroupSum()
+  group_sum.counts_needed(list(steps))
+  group_sum.set_data(list_avg)
+  average = lmap(lambda s: s[0] / max(min(steps[i], s[1]), 1),
+                 zip(map(group_sum.sum_getter(steps[i]), range(len(list_avg))),
+                     range(len(list_avg))))
+  std_dev = lmap(lambda s: sized_pot.running_std_dev(*s),
+                 zip(list_avg, average))
+  return average, std_dev
 
 
 class BodyModel:
@@ -44,6 +62,7 @@ class BodyModel:
   blood_level_factors: Dict[str, List[Tuple[float, float]]]
   factors_timeline: Dict[str, List[Tuple[float, float]]]
   running_average:  Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]
+  running_stddev:   Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]
   lab_levels: Dict[str, List[Tuple[datetime, float]]]
   lab_events: Dict[str, List[List[Tuple[datetime, float]]]]
   drugs_timeline: Dict[str, List[float]]
@@ -245,7 +264,7 @@ class BodyModel:
           average_est = sum(map(lambda x: x / len(estimates), estimates))
           levels = list(map(lambda x: (x[0], x[1] * average_est), level_matcher))
           if len(estimates) > 1 and corrected_std_dev:
-            std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1))
+            std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1])**2, levels)) / (len(levels)-1.5))
             # std_dev = math.sqrt(sum(map(lambda x: (x - average_est)**2, estimates)) / (len(estimates)-1))
           else:
             std_dev = math.sqrt(sum(map(lambda x: (x[0] - x[1]) ** 2, levels)) / len(levels))
@@ -279,6 +298,7 @@ class BodyModel:
              int(math.ceil(int(timedelta(days=self.step_days[2]).total_seconds()) / step_time_d)))
 
     self.running_average = {}
+    self.running_stddev  = {}
 
     for n, drug in enumerate(drugs):
       # print(f"{n}: {drug}")
@@ -317,7 +337,7 @@ class BodyModel:
             factor_timeline.append(self.blood_level_factors[drug][0])
         self.factor_timeline[drug] = factor_timeline
 
-        list_avg = lmap(lambda x: x[0] * x[1][0], zip(timeline, factor_timeline))
+        list_avg     = lmap(lambda x: x[0] * x[1][0], zip(timeline, factor_timeline))
         arr_avg = np.array(list_avg)
         arr_min = np.array(lmap(
               lambda x: x[0] * x[1][0] - x[1][1] * stddev_multiplier,
@@ -326,17 +346,18 @@ class BodyModel:
               lambda x: x[0] * x[1][0] + x[1][1] * stddev_multiplier,
               zip(timeline, factor_timeline)))
 
-        group_sum = GroupSum()
-        group_sum.counts_needed(list(steps))
-        group_sum.set_data(list_avg)
+        sized_pots: Tuple[SizedPot]
+        sized_pots = tuple(map(lambda s: SizedPot(s), steps))
 
-        running_average = [[], [], []]
-        for i in range(3):
-          running_average[i] = lmap(lambda s: s[0]/max(min(steps[i], s[1]), 1),
-                                    zip(map(group_sum.sum_getter(steps[i]), range(len(list_avg))),
-                                        range(len(list_avg))))
+        mp_ctx = mp.get_context('fork')
+        statistics_data = [(steps, list_avg, i) for i in range(3)]
+        with mp_ctx.Pool(3) as mp_pool:
+          statistics_results = mp_pool.map(calculate_running_statistics, statistics_data)
+
+        running_average, running_std_dev = tuple(map(list, list(zip(*statistics_results))))
 
         self.running_average[drug_name] = tuple(map(np.array, running_average))
+        self.running_stddev[drug_name]  = tuple(map(np.array, running_std_dev))
 
         if color:
           # print(f"{drug}: {n} => {get_color(n)}")

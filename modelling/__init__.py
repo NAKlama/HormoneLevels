@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 from .body_model import BodyModel, plot_data_type
+from .sized_pot import SizedPot
+from .group_sum import GroupSum
+from .dose import Dose
 from .lab_data import LabData
+

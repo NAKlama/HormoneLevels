@@ -25,23 +25,24 @@ plot_data = Union[Tuple[np.ndarray, np.ndarray, np.ndarray],
                   Tuple[np.ndarray, np.ndarray, np.ndarray, str]]
 
 
-def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
-               x_window:        Optional[Tuple[float, float]] = None,
-               y_window:        Optional[Tuple[float, float]] = None,
-               now:             Optional[float] = None,
-               # drug_order:      Optional[List[str]] = None,
-               x_ticks:         int = 7,
-               x_label:         Optional[str] = None,
-               y_label:         Optional[str] = None,
-               title:           Optional[str] = None,
-               lab_data:        Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
-               confidence_val:  Optional[float] = None,
-               avg_levels:      Optional[Dict[str, Tuple[float, float, str]]] = None,
-               moving_average:  Optional[Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
-               plot_markers:    bool = False,
-               no_avg_label:    bool = True,
-               plot_dates:      bool = False,
-               avg_length:      Optional[Tuple[int, int, int]] = None):
+def plot_drugs(data:              Tuple[np.ndarray, Dict[str, plot_data]],
+               x_window:          Optional[Tuple[float, float]] = None,
+               y_window:          Optional[Tuple[float, float]] = None,
+               now:               Optional[float] = None,
+               # drug_order:        Optional[List[str]] = None,
+               x_ticks:           int = 7,
+               x_label:           Optional[str] = None,
+               y_label:           Optional[str] = None,
+               title:             Optional[str] = None,
+               lab_data:          Optional[Dict[str, Tuple[List[int], List[float]]]] = None,
+               confidence_val:    Optional[float] = None,
+               avg_levels:        Optional[Dict[str, Tuple[float, float, str]]] = None,
+               moving_average:    Optional[Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
+               moving_deviation:  Optional[Dict[str, Tuple[np.ndarray, np.ndarray, np.ndarray]]] = None,
+               plot_markers:      bool = False,
+               no_avg_label:      bool = True,
+               plot_dates:        bool = False,
+               avg_length:        Optional[Tuple[int, int, int]] = None):
   avg_colors = ["#A00000", "#006000", "#000000"]
   avg_style  = [":", "-.", "--"]
   if avg_length is None:
@@ -88,116 +89,193 @@ def plot_drugs(data:            Tuple[np.ndarray, Dict[str, plot_data]],
       plot_cofidence = False
     else:
       plot_cofidence = True
+
+    keys_avg = []
     if color is not None:
       if plot_markers:
-        if plot_dates:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot_date(d_t, moving_average[name][i],
-                            marker=".",
-                            linestyle=avg_style[i],
-                            label=f'{name} {avg_length[i]}d average',
-                            color=avg_colors[i],
-                            zorder=5)
-          plt.plot_date(d_t, value,
-                        marker=".",
-                        linestyle="-",
-                        label=f'{name}',
-                        color=color,
-                        zorder=4)
-        else:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot(d_t, moving_average[name][i],
-                       marker=".",
-                       linestyle=avg_style[i],
-                       label=f'{name} {avg_length[i]}d average',
-                       color=avg_colors[i],
-                       zorder=5)
-          plt.plot(d_t, value,
-                   marker=".",
-                   linestyle="-",
-                   label=f'{name}',
-                   color=color,
-                   zorder=4)
+        keys_main_plot = {'marker': ".",
+                          'linestyle': "-",
+                          'label': f'{name}',
+                          'color': color,
+                          'zorder': 4}
+        for i in range(3):
+          keys_avg.append({'marker': ".",
+                           'linestyle': avg_style[i],
+                           # 'label': f'{name} {avg_length[i]}d average',
+                           'color': avg_colors[i],
+                           'zorder': 5})
       else:
-        if plot_dates:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot_date(d_t, moving_average[name][i],
-                            linestyle=avg_style[i],
-                            label=f'{name} {avg_length[i]}d average',
-                            markersize=0,
-                            color=avg_colors[i],
-                            zorder=5)
-          plt.plot_date(d_t, value,
-                        label=f'{name}',
-                        linestyle="-",
-                        markersize=0,
-                        linewidth=1,
-                        color=color,
-                        zorder=4)
-        else:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot(d_t, moving_average[name][i],
-                       linestyle=avg_style[i],
-                       label=f'{name} {avg_length[i]}d average',
-                       color=avg_colors[i],
-                       zorder=5)
-          plt.plot(d_t, value,
-                   label=f'{name}',
-                   color=color,
-                   linewidth=1,
-                   zorder=4)
-    else:
+        keys_main_plot = {'label': f'{name}',
+                          'linestyle': "-",
+                          'markersize': 0,
+                          'linewidth': 1,
+                          'color': color,
+                          'zorder': 4}
+        for i in range(3):
+          keys_avg.append({'linestyle': avg_style[i],
+                           # 'label': f'{name} {avg_length[i]}d average',
+                           'markersize': 0,
+                           'color': avg_colors[i],
+                           'zorder': 5})
+    else:  # color is None
       if plot_markers:
-        if plot_dates:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot_date(d_t, moving_average[name][i],
-                            marker=".",
-                            label=f'{name} {avg_length[i]}d average',
-                            linestyle=avg_style[i],
-                            zorder=5,
-                            linewidth=2)
-          plt.plot_date(d_t, value,
-                        marker=".",
-                        linestyle="-",
-                        linewidth=2,
-                        label=f'{name}',
-                        zorder=4)
-        else:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot(d_t, moving_average[name][i],
-                       linestyle=avg_style[i],
-                       marker=".",
-                       label=f'{name} {avg_length[i]}d average',
-                       zorder=5)
-          plt.plot(d_t, value,
-                   marker=".",
-                   linestyle="-",
-                   label=f'{name}',
-                   zorder=4)
+        keys_main_plot = {'marker': ".",
+                          'linestyle': "-",
+                          'linewidth': 2,
+                          'label': f'{name}',
+                          'zorder': 4}
+        for i in range(3):
+          keys_avg.append({'marker': ".",
+                           # 'label': f'{name} {avg_length[i]}d average',
+                           'linestyle': avg_style[i],
+                           'zorder': 5})
       else:
-        if plot_dates:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot_date(d_t, moving_average[name][i],
-                            label=f'{name} {avg_length[i]}d average',
-                            linestyle="--",
-                            zorder=5,
-                            linewidth=2)
-          plt.plot_date(d_t, value, label=f'{name}', zorder=4, linewidth=2)
-        else:
-          if moving_average is not None and name in moving_average:
-            for i in range(3):
-              plt.plot(d_t, moving_average[name][i],
-                       label=f'{name} {avg_length[i]}d average',
-                       linestyle="--",
-                       zorder=5)
-          plt.plot(d_t, value, label=f'{name}', zorder=4)
+        keys_main_plot = {'label': f'{name}',
+                          'zorder': 4,
+                          'linewidth': 2}
+        for i in range(3):
+          keys_avg.append({'markersize': 0,
+                           # 'label': f'{name} {avg_length[i]}d average',
+                           'linestyle': avg_style[i],
+                           'zorder': 5})
+
+    if plot_dates:
+      if moving_average is not None and name in moving_average:
+        for i in range(3):
+          plt.plot_date(d_t, moving_average[name][i], **keys_avg[i],
+                        linewidth=2,
+                        label=f'{name} {avg_length[i]}d average')
+          if moving_deviation is not None and name in moving_deviation:
+            plt.plot_date(d_t, moving_average[name][i] - moving_deviation[name][i], **keys_avg[i], linewidth=1)
+            plt.plot_date(d_t, moving_average[name][i] + moving_deviation[name][i], **keys_avg[i], linewidth=1)
+      plt.plot_date(d_t, value, **keys_main_plot)
+    else:
+      if moving_average is not None and name in moving_average:
+        for i in range(3):
+          plt.plot(d_t, moving_average[name][i], **keys_avg[i],
+                   linewidth=2,
+                   label=f'{name} {avg_length[i]}d average')
+          if moving_deviation is not None and name in moving_deviation:
+            plt.plot(d_t, moving_average[name][i] - moving_deviation[name][i], **keys_avg[i], linewidth=1)
+            plt.plot(d_t, moving_average[name][i] + moving_deviation[name][i], **keys_avg[i], linewidth=1)
+      plt.plot(d_t, value, **keys_main_plot)
+
+    # if color is not None:
+    #   if plot_markers:
+    #     if plot_dates:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           keys = {'marker': ".",
+    #                   'linestyle': avg_style[i],
+    #                   'label': f'{name} {avg_length[i]}d average',
+    #                   'color': avg_colors[i],
+    #                   'zorder': 5}
+    #           plt.plot_date(d_t, moving_average[name][i], **keys, linewidth=2)
+    #           if moving_deviation is not None and name in moving_deviation:
+    #             plt.plot_date(d_t, moving_average[name][i] - moving_deviation[name][i], **keys, linewidth=1)
+    #             plt.plot_date(d_t, moving_average[name][i] + moving_deviation[name][i], **keys, linewidth=1)
+    #       plt.plot_date(d_t, value,
+    #                     )
+    #     else:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           keys = {'marker': ".",
+    #                   'linestyle': avg_style[i],
+    #                   'label': f'{name} {avg_length[i]}d average',
+    #                   'color': avg_colors[i],
+    #                   'zorder': 5}
+    #           plt.plot(d_t, moving_average[name][i], **keys, linewidth=2)
+    #           if moving_deviation is not None and name in moving_deviation:
+    #             plt.plot(d_t, moving_average[name][i] - moving_deviation[name][i], **keys, linewidth=1)
+    #             plt.plot(d_t, moving_average[name][i] + moving_deviation[name][i], **keys, linewidth=1)
+    #       plt.plot(d_t, value,
+    #                marker=".",
+    #                linestyle="-",
+    #                label=f'{name}',
+    #                color=color,
+    #                zorder=4)
+    #   else:
+    #     if plot_dates:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           keys = {'linestyle': avg_style[i],
+    #                   'label': f'{name} {avg_length[i]}d average',
+    #                   'markersize': 0,
+    #                   'color': avg_colors[i],
+    #                   'zorder': 5}
+    #           plt.plot_date(d_t, moving_average[name][i], **keys, linewidth=2)
+    #           if moving_deviation is not None and name in moving_deviation:
+    #             plt.plot_date(d_t, moving_average[name][i] - moving_deviation[name][i], **keys, linewidth=2)
+    #             plt.plot_date(d_t, moving_average[name][i] + moving_deviation[name][i], **keys, linewidth=2)
+    #       plt.plot_date(d_t, value,
+    #                     label=f'{name}',
+    #                     linestyle="-",
+    #                     markersize=0,
+    #                     linewidth=1,
+    #                     color=color,
+    #                     zorder=4)
+    #     else:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           plt.plot(d_t, moving_average[name][i],
+    #                    linestyle=avg_style[i],
+    #                    label=f'{name} {avg_length[i]}d average',
+    #                    color=avg_colors[i],
+    #                    zorder=5)
+    #       plt.plot(d_t, value,
+    #                label=f'{name}',
+    #                color=color,
+    #                linewidth=1,
+    #                zorder=4)
+    # else:
+    #   if plot_markers:
+    #     if plot_dates:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           plt.plot_date(d_t, moving_average[name][i],
+    #                         marker=".",
+    #                         label=f'{name} {avg_length[i]}d average',
+    #                         linestyle=avg_style[i],
+    #                         zorder=5,
+    #                         linewidth=2)
+    #       plt.plot_date(d_t, value,
+    #                     marker=".",
+    #                     linestyle="-",
+    #                     linewidth=2,
+    #                     label=f'{name}',
+    #                     zorder=4)
+    #     else:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           plt.plot(d_t, moving_average[name][i],
+    #                    linestyle=avg_style[i],
+    #                    marker=".",
+    #                    label=f'{name} {avg_length[i]}d average',
+    #                    zorder=5)
+    #       plt.plot(d_t, value,
+    #                marker=".",
+    #                linestyle="-",
+    #                label=f'{name}',
+    #                zorder=4)
+    #   else:
+    #     if plot_dates:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           plt.plot_date(d_t, moving_average[name][i],
+    #                         label=f'{name} {avg_length[i]}d average',
+    #                         linestyle="--",
+    #                         zorder=5,
+    #                         linewidth=2)
+    #       plt.plot_date(d_t, value, label=f'{name}', zorder=4, linewidth=2)
+    #     else:
+    #       if moving_average is not None and name in moving_average:
+    #         for i in range(3):
+    #           plt.plot(d_t, moving_average[name][i],
+    #                    label=f'{name} {avg_length[i]}d average',
+    #                    linestyle="--",
+    #                    zorder=5)
+    #       plt.plot(d_t, value, label=f'{name}', zorder=4)
+
     if confidence_val is not None and plot_cofidence:
       if color is not None:
         plt.fill_between(d_t, minimum, maximum, label=f'{name} {confidence_val}% confidence interval',
