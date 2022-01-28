@@ -16,7 +16,7 @@
 
 
 import math
-from typing import List, Dict, Tuple, Union, Optional, Callable
+from typing import List, Dict, Tuple, Union, Optional, Sequence
 
 import funcy
 import numpy as np
@@ -38,7 +38,7 @@ plot_data_type = Union[Tuple[np.ndarray, np.ndarray, np.ndarray],
                        Tuple[np.ndarray, np.ndarray, np.ndarray, str]]
 
 
-def calculate_running_statistics(in_data: Tuple[List[int], List[float], int]) \
+def calculate_running_statistics(in_data: Tuple[Sequence[int], List[float], int]) \
         -> Tuple[List[float], List[float]]:
   steps, list_avg, i = in_data
   sized_pot = SizedPot(steps[i])
@@ -346,10 +346,8 @@ class BodyModel:
               lambda x: x[0] * x[1][0] + x[1][1] * stddev_multiplier,
               zip(timeline, factor_timeline)))
 
-        sized_pots: Tuple[SizedPot]
-        sized_pots = tuple(map(lambda s: SizedPot(s), steps))
-
         mp_ctx = mp.get_context('fork')
+        statistics_data: List[Tuple[Sequence[int], List[float], int]]
         statistics_data = [(steps, list_avg, i) for i in range(3)]
         with mp_ctx.Pool(3) as mp_pool:
           statistics_results = mp_pool.map(calculate_running_statistics, statistics_data)
